@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User roles in the system
+enum UserRole {
+  STARTUP
+  INVESTOR
+  MENTOR
+  STUDENT
+  ADMIN
+}
+
+model User {
+  id              Int             @id @default(autoincrement())
+  full_name       String
+  email           String          @unique
+  mobile          String?
+  password_hash   String
+  email_verified  Boolean         @default(false)
+  is_active       Boolean         @default(true)
+  last_login      DateTime?
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+  role            UserRole        @default(STARTUP)
+  startup_profile StartupProfile?
+  posts           Post[]
+  likes           Like[]
+  comments        Comment[]
+
+  @@map("users")
+}
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  author     User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  text       String
+  images     String[]
+  documents  String[]
+  likes      Like[]
+  comments   Comment[]
+  published  Boolean   @default(false)
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+
+  @@map("posts")
+}
+
+model Like {
+  id Int @id @default(autoincrement())
+  user_id Int
+  post_id Int
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+  @@unique([user_id, post_id])
+}
+// Ensures a user can like a post only once
+model Comment {
+  id Int @id @default(autoincrement())
+  user_id Int
+  post_id Int
+  content String
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model StartupProfile {
+  id                    Int                   @id @default(autoincrement())
+  user_id               Int                   @unique
+  is_complete           Boolean               @default(false)
+  completion_percentage Int                   @default(0)
+  created_at            DateTime              @default(now())
+  updated_at            DateTime              @updatedAt
+  business_details      BusinessDetails?
+  company_details       CompanyDetails?
+  innovation_focus      InnovationFocus?
+  interests             Interests?
+  offerings             Offerings?
+  partnership_interests PartnershipInterests?
+  personal_info         PersonalInfo?
+  user                  User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  technology_interests  TechnologyInterests?
+
+  @@map("startup_profiles")
+}
+
+model PersonalInfo {
+  id                 Int            @id @default(autoincrement())
+  startup_profile_id Int            @unique
+  profile_picture    String?
+  first_name         String
+  last_name          String
+  email              String
+  phone              String
+  location           String
+  website            String?
+  birth_date         DateTime?
+  bio                String?
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+  startup_profile    StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("personal_info")
+}
+
+model BusinessDetails {
+  id                 Int            @id @default(autoincrement())
+  startup_profile_id Int            @unique
+  job_title          String
+  company            String?
+  industry           String
+  experience         String?
+  business_type      String?
+  team_size          String?
+  revenue            String?
+  funding_stage      String?
+  skills             String?
+  goals              String?
+  linkedin_profile   String?
+  twitter_profile    String?
+  github_profile     String?
+  portfolio_website  String?
+  created_at         DateTime       @default(now())
+  updated_at         DateTime       @updatedAt
+  startup_profile    StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("business_details")
+}
+
+model CompanyDetails {
+  id                  Int            @id @default(autoincrement())
+  startup_profile_id  Int            @unique
+  company_logo        String?
+  company_name        String
+  founded_year        Int
+  company_email       String
+  company_phone       String
+  company_location    String
+  company_website     String?
+  company_description String
+  vision              String
+  mission             String
+  team_size           String?
+  company_type        String?
+  industry            String
+  revenue_range       String?
+  legal_name          String?
+  tax_id              String?
+  registration_date   DateTime?
+  business_license    String?
+  created_at          DateTime       @default(now())
+  updated_at          DateTime       @updatedAt
+  startup_profile     StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("company_details")
+}
+
+model Offerings {
+  id                        Int            @id @default(autoincrement())
+  startup_profile_id        Int            @unique
+  products                  Json?          @default("[]")
+  services                  Json?          @default("[]")
+  pricing_model             String?
+  price_range               String?
+  target_customers          String?
+  revenue_streams           String?
+  unique_value_proposition  String?
+  competitive_advantage     String?
+  support_model             String?
+  onboarding_process        String?
+  customer_success_strategy String?
+  future_offerings          String?
+  created_at                DateTime       @default(now())
+  updated_at                DateTime       @updatedAt
+  startup_profile           StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("offerings")
+}
+
+model Interests {
+  id                     Int            @id @default(autoincrement())
+  startup_profile_id     Int            @unique
+  primary_industry       String
+  secondary_industry     String?
+  primary_target_market  String?
+  geographic_focus       String?
+  market_description     String?
+  partnership_goals      String?
+  innovation_description String?
+  future_goals           String?
+  created_at             DateTime       @default(now())
+  updated_at             DateTime       @updatedAt
+  startup_profile        StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("interests")
+}
+
+model TechnologyInterests {
+  id                  Int            @id @default(autoincrement())
+  startup_profile_id  Int            @unique
+  ai_ml               Boolean        @default(false)
+  blockchain          Boolean        @default(false)
+  cloud_computing     Boolean        @default(false)
+  cybersecurity       Boolean        @default(false)
+  iot                 Boolean        @default(false)
+  fintech             Boolean        @default(false)
+  healthtech          Boolean        @default(false)
+  edtech              Boolean        @default(false)
+  sustainability_tech Boolean        @default(false)
+  other_tech          String?
+  created_at          DateTime       @default(now())
+  updated_at          DateTime       @updatedAt
+  startup_profile     StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("technology_interests")
+}
+
+model PartnershipInterests {
+  id                       Int            @id @default(autoincrement())
+  startup_profile_id       Int            @unique
+  startup_partnerships     Boolean        @default(false)
+  enterprise_partnerships  Boolean        @default(false)
+  research_collaborations  Boolean        @default(false)
+  academic_partnerships    Boolean        @default(false)
+  government_contracts     Boolean        @default(false)
+  nonprofit_collaborations Boolean        @default(false)
+  created_at               DateTime       @default(now())
+  updated_at               DateTime       @updatedAt
+  startup_profile          StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("partnership_interests")
+}
+
+model InnovationFocus {
+  id                        Int            @id @default(autoincrement())
+  startup_profile_id        Int            @unique
+  product_development       Boolean        @default(false)
+  process_innovation        Boolean        @default(false)
+  business_model_innovation Boolean        @default(false)
+  sustainability_innovation Boolean        @default(false)
+  social_impact             Boolean        @default(false)
+  disruptive_technology     Boolean        @default(false)
+  created_at                DateTime       @default(now())
+  updated_at                DateTime       @updatedAt
+  startup_profile           StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("innovation_focus")
+}
