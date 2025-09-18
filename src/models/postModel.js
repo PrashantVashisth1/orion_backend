@@ -26,7 +26,7 @@ export const createPost = async ({
 export const getPost = async (postId) => {
   return await prisma.post.findUnique({
     where: { id: postId },
-    include: { author: true, likes: true, comments: true },
+    include: { author: true, likes: true, comments: { include: { user: true } } },
   });
 };
 
@@ -81,7 +81,7 @@ export const deletePost = async ({ postId, userId }) => {
 // ✅ Get All Posts
 export const getAllPosts = async () => {
   return await prisma.post.findMany({
-    include: { author: true, likes: true, comments: true },
+    include: { author: true, likes: true, comments: { include: { user: true } } },
     orderBy: { created_at: "desc" },
   });
 };
