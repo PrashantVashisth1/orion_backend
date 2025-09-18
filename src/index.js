@@ -8,6 +8,7 @@ import startupProfileRoutes from "./routes/startupProfileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
+import sessionRoutes from './routes/sessionRoutes.js';
 import { authenticateToken } from "./middleware/auth.js";
 import pool from "./config/db.js";
 import cors from "cors";
@@ -68,7 +69,7 @@ app.use("/api/startup", startupProfileRoutes);
 app.use("/api/needs", needsRoutes);
 
 // Host session routes
-app.use("/api/host-sessions", hostSessionRoutes);
+// app.use("/api/host-sessions", hostSessionRoutes);
 
 // Post Routes
 app.use("/api/posts", postRoutes);
@@ -78,6 +79,9 @@ app.use("/api/comments", commentRoutes);
 
 // Like Routes
 app.use("/api", likeRoutes);
+
+// Session Routes
+app.use('/api/sessions',sessionRoutes);
 
 // Example protected route: get current user's profile
 app.get("/api/profile", authenticateToken, async (req, res) => {

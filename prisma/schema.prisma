@@ -17,6 +17,12 @@ enum UserRole {
   ADMIN
 }
 
+enum SessionType {
+  WEBINAR
+  PANEL_DISCUSSION
+  PRODUCT_DEMO
+}
+
 model User {
   id              Int             @id @default(autoincrement())
   full_name       String
@@ -33,6 +39,7 @@ model User {
   posts           Post[]
   likes           Like[]
   comments        Comment[]
+  sessions        Session[]
 
   @@map("users")
 }
@@ -255,4 +262,44 @@ model InnovationFocus {
   startup_profile           StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
 
   @@map("innovation_focus")
+}
+
+model Session {
+  id            Int         @id @default(autoincrement())
+  type          SessionType
+  title         String
+  dateTime      DateTime
+  duration      String
+
+  // Common
+  registrationLink String?
+
+  // Webinar-specific
+  audience               String[]
+  description            String?
+  speakerName            String?
+  speakerEmail           String?
+  contactInfo            String?
+
+  // Panel Discussion-specific
+  panelistName         String?
+  panelistDesignation  String?
+  panelistBio          String?
+  moderatorName        String?
+  moderatorDesignation String?
+  moderatorBio         String?
+
+  // Product Demo-specific
+  presenterName        String?
+  presenterDesignation String?
+  presenterAffiliation String?
+  aboutCompany         String?
+  aboutProduct         String?
+
+  // Relation to User
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
