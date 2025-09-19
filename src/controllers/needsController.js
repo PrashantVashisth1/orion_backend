@@ -280,6 +280,30 @@ export async function getNeeds(req, res) {
   }
 }
 
+export async function getNeedsByType(req, res) {
+  try {
+    const { type } = req.params;
+    const needs = await getNeedsByType(type);
+    res.json({
+      success: true,
+      data: {
+        needs
+      },
+      message: 'Needs retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Get needs by type error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to retrieve needs by type',
+        details: error.message
+      }
+    });
+  }
+}
+
 /**
  * Get a specific need post by ID
  */

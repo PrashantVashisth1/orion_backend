@@ -9,7 +9,8 @@ import {
   updateNeedPost,
   deleteNeedPost,
   getNeedsStatistics,
-  searchNeedsController
+  searchNeedsController,
+  getNeedsByType
 } from '../controllers/needsController.js';
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.get('/', getNeeds);                    // Get all needs with filtering/pa
 router.get('/search', searchNeedsController); // Search needs with advanced filters
 router.get('/stats', getNeedsStatistics);     // Get needs statistics (public)
 router.get('/:id', getNeed);                  // Get specific need by ID
+router.get('/:type', getNeedsByType); // Get needs by type
 
 // Protected routes (require authentication)
 router.post('/', authenticateToken, createNeed);           // Create a new need post

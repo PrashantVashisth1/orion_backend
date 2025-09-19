@@ -273,6 +273,21 @@ export async function getAllNeeds(options = {}) {
   }
 }
 
+export async function getNeedByType(needType) {
+  try {
+    const needs = await prisma.need.findMany({
+      where: {
+        type: needType,
+        is_published: true
+      }
+    });
+    return needs;
+  } catch (error) {
+    console.error('Error getting needs by type:', error);
+    throw error;
+  }
+}
+
 /**
  * Get a specific need post by ID
  */
