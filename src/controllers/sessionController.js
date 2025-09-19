@@ -1,6 +1,4 @@
-import express from "express";
 import prisma from "../config/prismaClient.js";
-const router = express.Router();
 
 // Create Session
 export const createSession = async (req, res) => {
@@ -80,6 +78,7 @@ export const getAllSession = async (req, res) => {
       orderBy: { created_at: "desc" },
     });
 
+
     // Clean data to only include filled fields
     const cleanedSessions = sessions.map(session => {
       const cleaned = {};
@@ -99,4 +98,3 @@ export const getAllSession = async (req, res) => {
     res.status(500).json({ error: "Something went wrong" });
   }
 };
-

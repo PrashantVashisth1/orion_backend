@@ -40,6 +40,7 @@ model User {
   likes           Like[]
   comments        Comment[]
   sessions        Session[]
+  needs           Need[]
 
   @@map("users")
 }
@@ -302,4 +303,35 @@ model Session {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+
+enum NeedType {
+  LIVE_PROJECTS
+  INTERNSHIP
+  RESEARCH
+  CSR_INITIATIVE
+}
+
+model Need {
+  id              Int          @id @default(autoincrement())
+  user_id         Int
+  type            NeedType
+  title           String
+  description     String
+  image_url       String?
+  contact_info    Json         // Stores email, phone as JSON
+  details_json    Json         // Stores all form-specific data as JSON
+  location        String?
+  duration        String?
+  skills          String?
+  compensation    String?
+  is_published    Boolean      @default(true)
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+  
+  // Relations
+  user            User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  
+  @@map("needs")
 }

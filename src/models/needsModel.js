@@ -1,167 +1,599 @@
-import pool from '../config/db.js';
+// src/models/needsModel.js
+import { PrismaClient } from '../generated/prisma/index.js';
 
-const TABLE_MAP = {
-    'live-projects': 'live_projects',
-    'internship': 'internships',
-    'research': 'research',
-    'csr-initiative': 'csr_initiatives'
+const prisma = new PrismaClient();
+
+// Mapping frontend form types to database enum values
+const FORM_TYPE_MAPPING = {
+  'live-projects': 'LIVE_PROJECTS',
+  'internship': 'INTERNSHIP',
+  'research': 'RESEARCH',
+  'csr-initiative': 'CSR_INITIATIVE'
 };
 
-export async function insertNeed(formType, formData, userId) {
-    const table = TABLE_MAP[formType];
-    if (!table) throw new Error('Invalid formType');
-
-    let query, values;
-    // Object to store additional form data that doesn't have a direct, explicit column
-    // This will be stored as JSON in the 'details_json' column.
-    let details = {};
-
-    // Common fields that might not have direct columns or are supplementary
-    details.companyName = formData.companyName;
-    // Store the image URL in details_json, as there's no explicit image_url column in the schema
-    details.imageUrl = formData[`${formType.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}Image`] || null;
-    details.email = formData[`${formType.replace('-', '')}Email`]; // e.g., projectEmail, internshipEmail
-    details.phone = formData[`${formType.replace('-', '')}Phone`]; // e.g., projectPhone, internshipPhone
-
-    if (formType === 'live-projects') {
-        // Explicitly mapped columns from frontend formData to backend table schema
-        const projectTitle = formData.projectTitle;
-        const description = formData.projectDescription;
-        const skills = formData.projectSkills;
-        const duration = formData.projectDuration;
-        const teamSize = formData.projectTeamSize;
-        // Prioritize location from mode (offline/hybrid) if available, otherwise use general location
-        const location = formData.projectModeLocation || formData.projectLocation || null;
-        const contact = formData.projectCvEmail; // Using CV email as the primary contact for this table
-
-        // Add other live-projects specific fields to details JSON
-        details.mode = formData.projectMode;
-        details.compensationType = formData.projectCompensation;
-        details.compensationSpecify = formData.projectCompensationSpecify;
-        details.extendable = formData.projectExtendable;
-
-        query = `INSERT INTO live_projects
-            (project_title, description, skills, duration, team_size, location, contact, user_id, details_json)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING *`;
-        values = [
-            projectTitle,
-            description,
-            skills,
-            duration,
-            teamSize,
-            location,
-            contact,
-            userId,
-            JSON.stringify(details) // Store all other details as JSON
-        ];
-    } else if (formType === 'internship') {
-        // Explicitly mapped columns
-        const jobTitle = formData.jobTitle;
-        const description = formData.internshipDescription;
-        const openFor = formData.openFor;
-        const duration = formData.duration;
-        const minSkills = formData.internshipSkills;
-        const fulltime = formData.fullTime;
-        const contactIntern = formData.internshipCvEmail;
-
-        // Add other internship specific fields to details JSON
-        details.stipendType = formData.stipend;
-        details.stipendSpecify = formData.stipendSpecify;
-        details.extendable = formData.extendable;
-
-        query = `INSERT INTO internships
-            (job_title, description, open_for, duration, min_skills, fulltime, contact_intern, user_id, details_json)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING *`;
-        values = [
-            jobTitle,
-            description,
-            openFor,
-            duration,
-            minSkills,
-            fulltime,
-            contactIntern,
-            userId,
-            JSON.stringify(details)
-        ];
-    } else if (formType === 'research') {
-        // Explicitly mapped columns
-        const researchTitle = formData.researchTitle;
-        const researchDesc = formData.researchDescription;
-        const researchOpen = formData.researchOpenFor;
-        const researchDuration = formData.researchDuration;
-        const researchSkills = formData.researchSkills;
-        const researchContact = formData.researchCvEmail; // Using CV email as the primary contact for this table
-
-        // Add other research specific fields to details JSON
-        details.stipendType = formData.researchStipend;
-        details.stipendSpecify = formData.researchStipendSpecify;
-        details.extendable = formData.researchExtendable;
-
-        query = `INSERT INTO research
-            (research_title, research_desc, research_open, research_duration, research_skills, research_contact, user_id, details_json)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-            RETURNING *`;
-        values = [
-            researchTitle,
-            researchDesc,
-            researchOpen,
-            researchDuration,
-            researchSkills,
-            researchContact,
-            userId,
-            JSON.stringify(details)
-        ];
-    } else if (formType === 'csr-initiative') {
-        // Explicitly mapped columns
-        const initiativeType = formData.initiativeType;
-        const projectDesc = formData.csrDescription;
-        const csrDuration = formData.csrDuration;
-        const members = formData.members;
-        const compensation = formData.csrCompensation; // This is the free text compensation field
-        // Prioritize location from mode (offline/hybrid) if available, otherwise use general location
-        const location = formData.modeLocation || formData.location || null;
-        const csrContact = formData.csrEmail; // Using email as the primary contact for this table
-
-        // Add other CSR specific fields to details JSON
-        details.mode = formData.mode;
-        details.stipendType = formData.csrStipend;
-        details.stipendSpecify = formData.csrStipendSpecify;
-
-        query = `INSERT INTO csr_initiatives
-            (initiative_type, project_desc, csr_duration, members, compensation, location, csr_contact, user_id, details_json)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-            RETURNING *`;
-        values = [
-            initiativeType,
-            projectDesc,
-            csrDuration,
-            members,
-            compensation,
-            location,
-            csrContact,
-            userId,
-            JSON.stringify(details)
-        ];
-    } else {
-        throw new Error('Invalid formType');
+/**
+ * Create a new need post
+ */
+export async function createNeedPost(userId, formType, formData) {
+  try {
+    // Map form type to enum
+    const needType = FORM_TYPE_MAPPING[formType];
+    if (!needType) {
+      throw new Error(`Invalid form type: ${formType}`);
     }
-
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    
+    // Extract common fields based on form type
+    let title, description, imageUrl, contactInfo, location, duration, skills, compensation, detailsJson;
+    
+    switch (formType) {
+      case 'live-projects':
+        title = formData.projectTitle;
+        description = formData.projectDescription;
+        imageUrl = formData.LiveProjectsImage;
+        contactInfo = {
+          email: formData.projectEmail,
+          phone: formData.projectPhone,
+          cvEmail: formData.projectCvEmail
+        };
+        location = formData.projectModeLocation || formData.projectLocation || null;
+        duration = formData.projectDuration;
+        skills = formData.projectSkills;
+        compensation = formData.projectCompensation === 'paid-above-6k' 
+          ? formData.projectCompensationSpecify 
+          : formData.projectCompensation;
+        
+        detailsJson = {
+          projectTitle: formData.projectTitle,
+          projectDescription: formData.projectDescription,
+          projectSkills: formData.projectSkills,
+          projectDuration: formData.projectDuration,
+          projectMode: formData.projectMode,
+          projectTeamSize: formData.projectTeamSize,
+          projectLocation: formData.projectLocation,
+          projectCompensation: formData.projectCompensation,
+          projectCompensationSpecify: formData.projectCompensationSpecify,
+          projectExtendable: formData.projectExtendable,
+          projectEmail: formData.projectEmail,
+          projectPhone: formData.projectPhone,
+          projectCvEmail: formData.projectCvEmail,
+          LiveProjectsImage: formData.LiveProjectsImage
+        };
+        break;
+        
+      case 'internship':
+        title = formData.job_title;
+        description = formData.description;
+        imageUrl = formData.InternshipImage;
+        contactInfo = {
+          email: formData.contact_email,
+          phone: formData.contact_phone,
+          cvEmail: formData.internship_cv_email
+        };
+        location = null; // Internship doesn't have explicit location in current form
+        duration = formData.duration;
+        skills = formData.min_skills;
+        compensation = formData.stipend === 'paid-intern-above-6k' 
+          ? formData.stipendSpecify 
+          : formData.stipend;
+        
+        detailsJson = {
+          jobTitle: formData.job_title,
+          description: formData.description,
+          openFor: formData.open_for,
+          duration: formData.duration,
+          stipend: formData.stipend,
+          stipendSpecify: formData.stipendSpecify,
+          minSkills: formData.min_skills,
+          extendable: formData.extendable,
+          fulltime: formData.fulltime,
+          contactEmail: formData.contact_email,
+          contactPhone: formData.contact_phone,
+          internshipCvEmail: formData.internship_cv_email,
+          InternshipImage: formData.InternshipImage
+        };
+        break;
+        
+      case 'research':
+        title = formData.researchTitle;
+        description = formData.researchDescription;
+        imageUrl = formData.ResearchImage;
+        contactInfo = {
+          email: formData.researchEmail,
+          phone: formData.researchPhone,
+          cvEmail: formData.researchCvEmail
+        };
+        location = null; // Research doesn't have explicit location
+        duration = formData.researchDuration;
+        skills = formData.researchSkills;
+        compensation = formData.researchStipend === 'paid-research-above-6k' 
+          ? formData.researchStipendSpecify 
+          : formData.researchStipend;
+        
+        detailsJson = {
+          researchTitle: formData.researchTitle,
+          researchDescription: formData.researchDescription,
+          researchOpenFor: formData.researchOpenFor,
+          researchDuration: formData.researchDuration,
+          researchStipend: formData.researchStipend,
+          researchStipendSpecify: formData.researchStipendSpecify,
+          researchSkills: formData.researchSkills,
+          researchExtendable: formData.researchExtendable,
+          researchEmail: formData.researchEmail,
+          researchPhone: formData.researchPhone,
+          researchCvEmail: formData.researchCvEmail,
+          ResearchImage: formData.ResearchImage
+        };
+        break;
+        
+      case 'csr-initiative':
+        title = formData.initiativeType;
+        description = formData.csrDescription;
+        imageUrl = formData.CsrInitiativeImage;
+        contactInfo = {
+          email: formData.csrEmail,
+          phone: formData.csrPhone
+        };
+        location = formData.modeLocation || formData.location || null;
+        duration = formData.csrDuration;
+        skills = null; // CSR doesn't have skills requirement
+        compensation = formData.csrStipend === 'paid-csr-above-6k' 
+          ? formData.csrStipendSpecify 
+          : formData.csrStipend || formData.csrCompensation;
+        
+        detailsJson = {
+          initiativeType: formData.initiativeType,
+          csrDescription: formData.csrDescription,
+          csrDuration: formData.csrDuration,
+          members: formData.members,
+          mode: formData.mode,
+          csrStipend: formData.csrStipend,
+          csrStipendSpecify: formData.csrStipendSpecify,
+          csrCompensation: formData.csrCompensation,
+          location: formData.location,
+          csrEmail: formData.csrEmail,
+          csrPhone: formData.csrPhone,
+          CsrInitiativeImage: formData.CsrInitiativeImage
+        };
+        break;
+        
+      default:
+        throw new Error(`Unsupported form type: ${formType}`);
+    }
+    
+    // Create the need post using Prisma
+    const needPost = await prisma.need.create({
+      data: {
+        user_id: userId,
+        type: needType,
+        title: title,
+        description: description,
+        image_url: imageUrl,
+        contact_info: contactInfo,
+        details_json: detailsJson,
+        location: location,
+        duration: duration,
+        skills: skills,
+        compensation: compensation,
+        is_published: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    return needPost;
+  } catch (error) {
+    console.error('Error creating need post:', error);
+    throw error;
+  }
 }
 
-export async function fetchNeeds() {
-    const queries = [
-        // Updated SELECT statements to include details_json
-        pool.query(`SELECT id, 'live-projects' AS form_type, project_title, description, skills, duration, team_size, location, contact, user_id, created_at, details_json FROM live_projects`),
-        pool.query(`SELECT id, 'internship' AS form_type, job_title, description, open_for, duration, min_skills, fulltime, contact_intern, user_id, created_at, details_json FROM internships`),
-        pool.query(`SELECT id, 'research' AS form_type, research_title, research_desc, research_open, research_duration, research_skills, research_contact, user_id, created_at, details_json FROM research`),
-        pool.query(`SELECT id, 'csr-initiative' AS form_type, initiative_type, project_desc, csr_duration, members, compensation, location, csr_contact, user_id, created_at, details_json FROM csr_initiatives`)
+/**
+ * Get all need posts with pagination and filtering
+ */
+export async function getAllNeeds(options = {}) {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      type = null,
+      location = null,
+      skills = null,
+      sortBy = 'created_at',
+      sortOrder = 'DESC'
+    } = options;
+    
+    const skip = (page - 1) * limit;
+    
+    // Build where clause
+    const where = {
+      is_published: true,
+      ...(type && { type: type }),
+      ...(location && { 
+        location: { 
+          contains: location, 
+          mode: 'insensitive' 
+        } 
+      }),
+      ...(skills && { 
+        skills: { 
+          contains: skills, 
+          mode: 'insensitive' 
+        } 
+      })
+    };
+    
+    // Build orderBy clause
+    const orderBy = {
+      [sortBy]: sortOrder.toLowerCase()
+    };
+    
+    // Get data and count in parallel
+    const [needs, total] = await Promise.all([
+      prisma.need.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        }
+      }),
+      prisma.need.count({ where })
+    ]);
+    
+    const totalPages = Math.ceil(total / limit);
+    
+    return {
+      data: needs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
+  } catch (error) {
+    console.error('Error getting all needs:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get a specific need post by ID
+ */
+export async function getNeedById(needId) {
+  try {
+    const need = await prisma.need.findFirst({
+      where: {
+        id: needId,
+        is_published: true
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    return need;
+  } catch (error) {
+    console.error('Error getting need by ID:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get needs posted by a specific user
+ */
+export async function getNeedsByUser(userId, options = {}) {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      includeUnpublished = false
+    } = options;
+    
+    const skip = (page - 1) * limit;
+    
+    const where = {
+      user_id: userId,
+      ...(includeUnpublished ? {} : { is_published: true })
+    };
+    
+    const needs = await prisma.need.findMany({
+      where,
+      orderBy: {
+        created_at: 'desc'
+      },
+      skip,
+      take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    return needs;
+  } catch (error) {
+    console.error('Error getting needs by user:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update a need post
+ */
+export async function updateNeed(needId, userId, updateData) {
+  try {
+    // First, verify ownership
+    const existingNeed = await prisma.need.findFirst({
+      where: {
+        id: needId,
+        user_id: userId
+      }
+    });
+    
+    if (!existingNeed) {
+      throw new Error('Need not found or unauthorized');
+    }
+    
+    // Filter allowed fields
+    const allowedFields = [
+      'title', 'description', 'image_url', 'contact_info', 
+      'details_json', 'location', 'duration', 'skills', 'compensation'
     ];
-    const results = await Promise.all(queries);
-    const posts = results.flatMap(r => r.rows);
-    posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return posts;
+    
+    const filteredData = {};
+    for (const [key, value] of Object.entries(updateData)) {
+      if (allowedFields.includes(key) && value !== undefined) {
+        filteredData[key] = value;
+      }
+    }
+    
+    if (Object.keys(filteredData).length === 0) {
+      throw new Error('No valid fields to update');
+    }
+    
+    // Update the need post
+    const updatedNeed = await prisma.need.update({
+      where: {
+        id: needId
+      },
+      data: filteredData,
+      include: {
+        user: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true
+          }
+        }
+      }
+    });
+    
+    return updatedNeed;
+  } catch (error) {
+    console.error('Error updating need:', error);
+    throw error;
+  }
 }
+
+/**
+ * Delete a need post
+ */
+export async function deleteNeed(needId, userId) {
+  try {
+    // First, verify ownership
+    const existingNeed = await prisma.need.findFirst({
+      where: {
+        id: needId,
+        user_id: userId
+      }
+    });
+    
+    if (!existingNeed) {
+      throw new Error('Need not found or unauthorized');
+    }
+    
+    // Delete the need post
+    const deletedNeed = await prisma.need.delete({
+      where: {
+        id: needId
+      }
+    });
+    
+    return deletedNeed;
+  } catch (error) {
+    console.error('Error deleting need:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get statistics for needs
+ */
+export async function getNeedsStats(userId = null) {
+  try {
+    const where = {
+      is_published: true,
+      ...(userId && { user_id: userId })
+    };
+    
+    // Get counts by type
+    const stats = await prisma.need.groupBy({
+      by: ['type'],
+      where,
+      _count: {
+        type: true
+      }
+    });
+    
+    // Get recent counts (last 7 days)
+    const recentWhere = {
+      ...where,
+      created_at: {
+        gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+      }
+    };
+    
+    const recentStats = await prisma.need.groupBy({
+      by: ['type'],
+      where: recentWhere,
+      _count: {
+        type: true
+      }
+    });
+    
+    // Combine stats
+    const combined = stats.map(stat => {
+      const recentStat = recentStats.find(r => r.type === stat.type);
+      return {
+        type: stat.type,
+        count: stat._count.type,
+        recent_count: recentStat?._count.type || 0
+      };
+    });
+    
+    return combined;
+  } catch (error) {
+    console.error('Error getting needs stats:', error);
+    throw error;
+  }
+}
+
+/**
+ * Search needs with advanced filters
+ */
+export async function searchNeeds(searchOptions = {}) {
+  try {
+    const {
+      query = '',
+      type = null,
+      location = null,
+      skills = null,
+      compensation = null,
+      page = 1,
+      limit = 20,
+      sortBy = 'created_at',
+      sortOrder = 'desc'
+    } = searchOptions;
+    
+    const skip = (page - 1) * limit;
+    
+    const where = {
+      is_published: true,
+      ...(type && { type: type }),
+      ...(location && { 
+        location: { 
+          contains: location, 
+          mode: 'insensitive' 
+        } 
+      }),
+      ...(skills && { 
+        skills: { 
+          contains: skills, 
+          mode: 'insensitive' 
+        } 
+      }),
+      ...(compensation && { 
+        compensation: { 
+          contains: compensation, 
+          mode: 'insensitive' 
+        } 
+      }),
+      ...(query && {
+        OR: [
+          { 
+            title: { 
+              contains: query, 
+              mode: 'insensitive' 
+            } 
+          },
+          { 
+            description: { 
+              contains: query, 
+              mode: 'insensitive' 
+            } 
+          },
+          { 
+            skills: { 
+              contains: query, 
+              mode: 'insensitive' 
+            } 
+          }
+        ]
+      })
+    };
+    
+    const orderBy = {
+      [sortBy]: sortOrder
+    };
+    
+    const [needs, total] = await Promise.all([
+      prisma.need.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true
+            }
+          }
+        }
+      }),
+      prisma.need.count({ where })
+    ]);
+    
+    const totalPages = Math.ceil(total / limit);
+    
+    return {
+      data: needs,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    };
+  } catch (error) {
+    console.error('Error searching needs:', error);
+    throw error;
+  }
+}
+
+// Close Prisma connection when the application shuts down
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+});
+
+export default prisma;

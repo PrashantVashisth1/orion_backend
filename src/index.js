@@ -2,13 +2,12 @@
 import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
-import needsRoutes from "./routes/needsRoutes.js";
-import hostSessionRoutes from "./routes/hostSessionRoutes.js";
 import startupProfileRoutes from "./routes/startupProfileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
 import sessionRoutes from './routes/sessionRoutes.js';
+import needsRoutes from "./routes/needsRoutes.js";
 import { authenticateToken } from "./middleware/auth.js";
 import pool from "./config/db.js";
 import cors from "cors";
@@ -82,6 +81,9 @@ app.use("/api", likeRoutes);
 
 // Session Routes
 app.use('/api/sessions',sessionRoutes);
+
+// Needs Routes
+app.use("/api/needs", needsRoutes);
 
 // Example protected route: get current user's profile
 app.get("/api/profile", authenticateToken, async (req, res) => {
