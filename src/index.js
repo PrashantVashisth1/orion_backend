@@ -8,6 +8,7 @@ import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
 import sessionRoutes from './routes/sessionRoutes.js';
 import needsRoutes from "./routes/needsRoutes.js";
+import userActivityRoutes from "./routes/userActivityRoutes.js";
 import { authenticateToken } from "./middleware/auth.js";
 import pool from "./config/db.js";
 import cors from "cors";
@@ -84,6 +85,9 @@ app.use('/api/sessions',sessionRoutes);
 
 // Needs Routes
 app.use("/api/needs", needsRoutes);
+
+// User Activity Routes
+app.use("/api/activities", userActivityRoutes);
 
 // Example protected route: get current user's profile
 app.get("/api/profile", authenticateToken, async (req, res) => {
