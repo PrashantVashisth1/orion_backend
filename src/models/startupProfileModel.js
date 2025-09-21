@@ -57,8 +57,13 @@ export async function createStartupProfile(userId) {
  * @param {Object} personalInfoData
  * @returns {Promise<Object>} updated personal info
  */
+
 export async function upsertPersonalInfo(startupProfileId, personalInfoData) {
   try {
+    const existing = await prisma.personalInfo.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...personalInfoData } : personalInfoData;
     const personalInfo = await prisma.personalInfo.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -68,10 +73,9 @@ export async function upsertPersonalInfo(startupProfileId, personalInfoData) {
         ...personalInfoData,
       },
       update: {
-        ...personalInfoData,
+        ...mergedData,
       },
     });
-
     return personalInfo;
   } catch (error) {
     console.error('Error upserting personal info:', error);
@@ -85,8 +89,34 @@ export async function upsertPersonalInfo(startupProfileId, personalInfoData) {
  * @param {Object} businessDetailsData
  * @returns {Promise<Object>} updated business details
  */
+// export async function upsertBusinessDetails(startupProfileId, businessDetailsData) {
+//   try {
+//     const businessDetails = await prisma.businessDetails.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...businessDetailsData,
+//       },
+//       update: {
+//         ...businessDetailsData,
+//       },
+//     });
+
+//     return businessDetails;
+//   } catch (error) {
+//     console.error('Error upserting business details:', error);
+//     throw error;
+//   }
+// }
+
 export async function upsertBusinessDetails(startupProfileId, businessDetailsData) {
   try {
+    const existing = await prisma.businessDetails.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...businessDetailsData } : businessDetailsData;
     const businessDetails = await prisma.businessDetails.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -96,10 +126,9 @@ export async function upsertBusinessDetails(startupProfileId, businessDetailsDat
         ...businessDetailsData,
       },
       update: {
-        ...businessDetailsData,
+        ...mergedData,
       },
     });
-
     return businessDetails;
   } catch (error) {
     console.error('Error upserting business details:', error);
@@ -114,8 +143,34 @@ export async function upsertBusinessDetails(startupProfileId, businessDetailsDat
  * @param {Object} companyDetailsData
  * @returns {Promise<Object>} updated company details
  */
+// export async function upsertCompanyDetails(startupProfileId, companyDetailsData) {
+//   try {
+//     const companyDetails = await prisma.companyDetails.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...companyDetailsData,
+//       },
+//       update: {
+//         ...companyDetailsData,
+//       },
+//     });
+
+//     return companyDetails;
+//   } catch (error) {
+//     console.error('Error upserting company details:', error);
+//     throw error;
+//   }
+// }
+
 export async function upsertCompanyDetails(startupProfileId, companyDetailsData) {
   try {
+    const existing = await prisma.companyDetails.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...companyDetailsData } : companyDetailsData;
     const companyDetails = await prisma.companyDetails.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -125,7 +180,7 @@ export async function upsertCompanyDetails(startupProfileId, companyDetailsData)
         ...companyDetailsData,
       },
       update: {
-        ...companyDetailsData,
+        ...mergedData,
       },
     });
 
@@ -135,6 +190,7 @@ export async function upsertCompanyDetails(startupProfileId, companyDetailsData)
     throw error;
   }
 }
+
 
 /**
  * Update or create offerings section
@@ -192,8 +248,34 @@ export async function upsertOfferings(startupProfileId, offeringsData) {
  * @param {Object} interestsData
  * @returns {Promise<Object>} updated interests
  */
+// export async function upsertInterests(startupProfileId, interestsData) {
+//   try {
+//     const interests = await prisma.interests.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...interestsData,
+//       },
+//       update: {
+//         ...interestsData,
+//       },
+//     });
+
+//     return interests;
+//   } catch (error) {
+//     console.error('Error upserting interests:', error);
+//     throw error;
+//   }
+// }
+
 export async function upsertInterests(startupProfileId, interestsData) {
   try {
+    const existing = await prisma.interests.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...interestsData } : interestsData;
     const interests = await prisma.interests.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -203,7 +285,7 @@ export async function upsertInterests(startupProfileId, interestsData) {
         ...interestsData,
       },
       update: {
-        ...interestsData,
+        ...mergedData,
       },
     });
 
@@ -220,8 +302,32 @@ export async function upsertInterests(startupProfileId, interestsData) {
  * @param {Object} technologyInterestsData
  * @returns {Promise<Object>} updated technology interests
  */
+// export async function upsertTechnologyInterests(startupProfileId, technologyInterestsData) {
+//   try {
+//     const technologyInterests = await prisma.technologyInterests.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...technologyInterestsData,
+//       },
+//       update: {
+//         ...technologyInterestsData,
+//       },
+//     });
+//     return technologyInterests;
+//   } catch (error) {
+//     console.error('Error upserting technology interests:', error);
+//     throw error;
+//   }
+// }
 export async function upsertTechnologyInterests(startupProfileId, technologyInterestsData) {
   try {
+    const existing = await prisma.technologyInterests.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...technologyInterestsData } : technologyInterestsData;
     const technologyInterests = await prisma.technologyInterests.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -231,7 +337,7 @@ export async function upsertTechnologyInterests(startupProfileId, technologyInte
         ...technologyInterestsData,
       },
       update: {
-        ...technologyInterestsData,
+        ...mergedData,
       },
     });
     return technologyInterests;
@@ -247,8 +353,33 @@ export async function upsertTechnologyInterests(startupProfileId, technologyInte
  * @param {Object} partnershipInterestsData
  * @returns {Promise<Object>} updated partnership interests
  */
+// export async function upsertPartnershipInterests(startupProfileId, partnershipInterestsData) {
+//   try {
+//     const partnershipInterests = await prisma.partnershipInterests.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...partnershipInterestsData,
+//       },
+//       update: {
+//         ...partnershipInterestsData,
+//       },
+//     });
+//     return partnershipInterests;
+//   } catch (error) {
+//     console.error('Error upserting partnership interests:', error);
+//     throw error;
+//   }
+// }
+
 export async function upsertPartnershipInterests(startupProfileId, partnershipInterestsData) {
   try {
+    const existing = await prisma.partnershipInterests.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...partnershipInterestsData } : partnershipInterestsData;
     const partnershipInterests = await prisma.partnershipInterests.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -258,7 +389,7 @@ export async function upsertPartnershipInterests(startupProfileId, partnershipIn
         ...partnershipInterestsData,
       },
       update: {
-        ...partnershipInterestsData,
+        ...mergedData,
       },
     });
     return partnershipInterests;
@@ -268,14 +399,41 @@ export async function upsertPartnershipInterests(startupProfileId, partnershipIn
   }
 }
 
+
 /**
  * Update or create innovation focus section
  * @param {number} startupProfileId
  * @param {Object} innovationFocusData
  * @returns {Promise<Object>} updated innovation focus
  */
+// export async function upsertInnovationFocus(startupProfileId, innovationFocusData) {
+//   try {
+//     const innovationFocus = await prisma.innovationFocus.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...innovationFocusData,
+//       },
+//       update: {
+//         ...innovationFocusData,
+//       },
+//     });
+
+//     return innovationFocus;
+//   } catch (error) {
+//     console.error('Error upserting innovation focus:', error);
+//     throw error;
+//   }
+// }
+
 export async function upsertInnovationFocus(startupProfileId, innovationFocusData) {
   try {
+    const existing = await prisma.innovationFocus.findUnique({
+      where: { startup_profile_id: startupProfileId },
+    });
+    const mergedData = existing ? { ...existing, ...innovationFocusData } : innovationFocusData;
     const innovationFocus = await prisma.innovationFocus.upsert({
       where: {
         startup_profile_id: startupProfileId,
@@ -285,7 +443,7 @@ export async function upsertInnovationFocus(startupProfileId, innovationFocusDat
         ...innovationFocusData,
       },
       update: {
-        ...innovationFocusData,
+        ...mergedData,
       },
     });
 
@@ -312,6 +470,7 @@ export async function updateCompletionPercentage(startupProfileId) {
         business_details: true,
         company_details: true,
         interests: true,
+        offerings: true
       },
     });
 
@@ -320,6 +479,7 @@ export async function updateCompletionPercentage(startupProfileId) {
       profile.business_details,
       profile.company_details,
       profile.interests,
+      profile.offerings
     ];
 
     const completedSections = sections.filter(section => section !== null).length;
