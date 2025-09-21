@@ -6,6 +6,7 @@ import startupProfileRoutes from "./routes/startupProfileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
+import trendingPostsRoutes from "./routes/trendingPostsRoutes.js";
 import sessionRoutes from './routes/sessionRoutes.js';
 import needsRoutes from "./routes/needsRoutes.js";
 import userActivityRoutes from "./routes/userActivityRoutes.js";
@@ -79,6 +80,9 @@ app.use("/api/comments", commentRoutes);
 
 // Like Routes
 app.use("/api", likeRoutes);
+
+// Trending Posts
+app.use("/api",trendingPostsRoutes);
 
 // Session Routes
 app.use('/api/sessions',sessionRoutes);

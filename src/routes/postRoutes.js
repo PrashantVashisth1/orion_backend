@@ -18,5 +18,4 @@ router.get("/", getAllPosts);
 router.get("/:id", getPost);
 router.put("/:id", authenticateToken, updatePost);
 router.delete("/:id", authenticateToken, deletePost);
-
 export default router;
