@@ -1,5 +1,7 @@
 // src/index.js
 import express from "express";
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import startupProfileRoutes from "./routes/startupProfileRoutes.js";
@@ -16,6 +18,7 @@ import cors from "cors";
 import morgan from "morgan";
 import { generalLimiter } from "./utils/helpers/rateLimiter.js";
 import winston from "winston";
+import prisma from "./config/prismaClient.js";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,6 +32,13 @@ dotenv.config();
 });
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*', // You should restrict this to your client's URL in a production environment
+    methods: ['GET', 'POST'],
+  },
+});
 const PORT = process.env.PORT || 4000;
 
 // Set up CORS (allow all origins by default, customize as needed)
@@ -73,7 +83,7 @@ app.use("/api/needs", needsRoutes);
 // app.use("/api/host-sessions", hostSessionRoutes);
 
 // Post Routes
-app.use("/api/posts", postRoutes);
+app.use("/api/posts", postRoutes(io));
 
 // Comment Routes
 app.use("/api/comments", commentRoutes);
@@ -92,6 +102,18 @@ app.use("/api/needs", needsRoutes);
 
 // User Activity Routes
 app.use("/api/activities", userActivityRoutes);
+
+//  Notification System
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log(`User connected: ${socket.id}`);
+
+  socket.on('disconnect', () => {
+    console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
 
 // Example protected route: get current user's profile
 app.get("/api/profile", authenticateToken, async (req, res) => {
@@ -143,6 +165,6 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });

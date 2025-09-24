@@ -2,7 +2,7 @@
 import * as postModel from "../models/postModel.js";
 
 // ✅ Create Post
-export const createPost = async (req, res) => {
+export const createPost = async (req, res,io) => {
   try {
     const userId = req.user.id; // assuming user is set in middleware
     const { text, images, documents } = req.body;
@@ -18,6 +18,19 @@ export const createPost = async (req, res) => {
       images,
       documents,
     });
+    // Get the author's name from the newly created post data
+    const authorName = post.author?.full_name || "A user";
+
+    // Broadcast the new post notification using the passed `io` instance
+    const notification = {
+      message: `${authorName} has created a new post!`,
+      post: post,
+    };
+    
+    // This is where you use the `io` instance to emit the event
+    io.emit('new-post-notification', notification);
+    console.log('New post created and notification broadcasted:', post);
+
     res.status(201).json({ success: true, data: post });
   } catch (error) {
     console.error("Error creating post:", error);
