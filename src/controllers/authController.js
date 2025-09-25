@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
-import { createUser, findUserByEmail } from '../models/userModel.js';
+import { createUser, findUserByEmail, findUserByEmailAndStatus, upsertUnverifiedUser, verifyUser } from '../models/userModel.js';
 import { generateToken } from '../utils/helpers/generateToken.js';
 import { signupSchema, loginSchema } from '../utils/validation/authValidation.js';
+import { sendOtpEmail } from '../utils/helpers/emailService.js';
+import crypto from "crypto";
 
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -133,3 +135,53 @@ export async function login(req, res) {
     });
   }
 }
+
+export const sendOtp = async (req, res) => {
+  // 1. Validate input
+  const { full_name, email, mobile, password } = req.body;
+
+  // 2. Check if a verified user with this email already exists
+  const existingVerifiedUser = await findUserByEmailAndStatus(email, true);
+  if (existingVerifiedUser) {
+    return res.status(409).json({ message: 'A verified account with this email already exists.' });
+  }
+
+  // 3. Generate OTP and hash password
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const password_hash = await bcrypt.hash(password, 10);
+  const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+  // 4. Create or update user as unverified
+  const userData = { full_name, email, mobile, password_hash, otp, otp_expires_at, is_verified: false };
+  await upsertUnverifiedUser(email, userData);
+
+  // 5. Send OTP email
+  try {
+    await sendOtpEmail(email, otp);
+    res.status(200).json({ message: 'OTP sent to your email. Please verify.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to send OTP.' });
+  }
+};
+
+export const verifyOtpAndRegister = async (req, res) => {
+    // 1. Get email and OTP from request
+    const { email, otp } = req.body;
+
+    // 2. Find unverified user
+    const user = await findUserByEmailAndStatus(email, false);
+    if (!user || user.otp !== otp) {
+        return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    // 3. Check if OTP has expired
+    if (new Date() > new Date(user.otp_expires_at)) {
+        return res.status(400).json({ message: 'OTP has expired.' });
+    }
+
+    // 4. Verify user and generate token
+    const verifiedUser = await verifyUser(email);
+    const token = generateToken(verifiedUser.id);
+
+    res.status(201).json({ token, user: verifiedUser });
+};

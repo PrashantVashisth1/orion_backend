@@ -59,3 +59,54 @@ export async function findUserById(id) {
   return null;
 }
 
+/**
+ * Finds a user by their email and verification status.
+ * @param {string} email - The user's email.
+ * @param {boolean} is_verified - The verification status to check for.
+ * @returns {Promise<object|null>} The user object or null if not found.
+ */
+export const findUserByEmailAndStatus = async (email, is_verified) => {
+  return await prisma.user.findFirst({
+    where: {
+      email,
+      is_verified,
+    },
+  });
+};
+
+/**
+ * Creates a new unverified user or updates an existing unverified user's OTP.
+ * This is useful for "Resend OTP" and initial signup.
+ * @param {string} email - The user's email to use as the unique identifier.
+ * @param {object} userData - The user data to create or update.
+ * @returns {Promise<object>} The created or updated user object.
+ */
+export const upsertUnverifiedUser = async (email, userData) => {
+  return await prisma.user.upsert({
+    where: { email },
+    update: { // What to do if an unverified user with this email already exists
+      ...userData,
+    },
+    create: { // What to do if no user with this email exists
+      ...userData,
+    },
+  });
+};
+
+
+/**
+ * Marks a user as verified and clears their OTP fields.
+ * @param {string} email - The user's email.
+ * @returns {Promise<object>} The updated, verified user object.
+ */
+export const verifyUser = async (email) => {
+    return await prisma.user.update({
+        where: { email },
+        data: {
+            is_verified: true,
+            otp: null,
+            otp_expires_at: null,
+        },
+    });
+}
+
