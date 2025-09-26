@@ -1,9 +1,21 @@
-import dotenv from 'dotenv';
-import bcrypt from 'bcrypt';
-import { createUser, findUserByEmail, findUserByEmailAndStatus, upsertUnverifiedUser, verifyUser } from '../models/userModel.js';
-import { generateToken } from '../utils/helpers/generateToken.js';
-import { signupSchema, loginSchema } from '../utils/validation/authValidation.js';
-import { sendOtpEmail } from '../utils/helpers/emailService.js';
+import dotenv from "dotenv";
+import bcrypt from "bcrypt";
+import {
+  createUser,
+  findUserByEmail,
+  findUserByEmailAndStatus,
+  upsertUnverifiedUser,
+  verifyUser,
+  findUserByResetToken,
+  setUserResetToken,
+  updateUserPassword,
+} from "../models/userModel.js";
+import { generateToken } from "../utils/helpers/generateToken.js";
+import {
+  signupSchema,
+  loginSchema,
+} from "../utils/validation/authValidation.js";
+import { sendOtpEmail, sendPasswordResetEmail } from "../utils/helpers/emailService.js";
 import crypto from "crypto";
 
 dotenv.config();
@@ -20,26 +32,26 @@ export async function signup(req, res) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Validation failed',
-          details: error.details.map(detail => ({
-            field: detail.path.join('.'),
-            message: detail.message
-          }))
-        }
+          code: "VALIDATION_ERROR",
+          message: "Validation failed",
+          details: error.details.map((detail) => ({
+            field: detail.path.join("."),
+            message: detail.message,
+          })),
+        },
       });
     }
     const { fullName, email, mobile, password } = req.body;
-    
+
     // Check for existing user
     const existing = await findUserByEmail(email);
     if (existing) {
       return res.status(409).json({
         success: false,
         error: {
-          code: 'EMAIL_EXISTS',
-          message: 'Invalid registration details'
-        }
+          code: "EMAIL_EXISTS",
+          message: "Invalid registration details",
+        },
       });
     }
 
@@ -52,17 +64,17 @@ export async function signup(req, res) {
     return res.status(201).json({
       success: true,
       data: { user, token },
-      message: 'User registered successfully'
+      message: "User registered successfully",
     });
   } catch (err) {
     console.log(err);
-    console.error('Signup error:', err);
+    console.error("Signup error:", err);
     return res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
-      }
+        code: "INTERNAL_ERROR",
+        message: "Internal server error",
+      },
     });
   }
 }
@@ -77,27 +89,27 @@ export async function login(req, res) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Validation failed',
-          details: error.details.map(detail => ({
-            field: detail.path.join('.'),
-            message: detail.message
-          }))
-        }
+          code: "VALIDATION_ERROR",
+          message: "Validation failed",
+          details: error.details.map((detail) => ({
+            field: detail.path.join("."),
+            message: detail.message,
+          })),
+        },
       });
     }
     const { email, password } = req.body;
 
     // Find user
     const user = await findUserByEmail(email);
-    console.log(user)
+    console.log(user);
     if (!user) {
       return res.status(401).json({
         success: false,
         error: {
-          code: 'INVALID_CREDENTIALS',
-          message: 'Invalid credentials'
-        }
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid credentials",
+        },
       });
     }
 
@@ -107,9 +119,9 @@ export async function login(req, res) {
       return res.status(401).json({
         success: false,
         error: {
-          code: 'INVALID_CREDENTIALS',
-          message: 'Invalid credentials'
-        }
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid credentials",
+        },
       });
     }
 
@@ -122,16 +134,16 @@ export async function login(req, res) {
     return res.json({
       success: true,
       data: { user: userData, token },
-      message: 'Login successful'
+      message: "Login successful",
     });
   } catch (err) {
-    console.error('Login error:', err);
+    console.error("Login error:", err);
     return res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
-      }
+        code: "INTERNAL_ERROR",
+        message: "Internal server error",
+      },
     });
   }
 }
@@ -143,7 +155,9 @@ export const sendOtp = async (req, res) => {
   // 2. Check if a verified user with this email already exists
   const existingVerifiedUser = await findUserByEmailAndStatus(email, true);
   if (existingVerifiedUser) {
-    return res.status(409).json({ message: 'A verified account with this email already exists.' });
+    return res
+      .status(409)
+      .json({ message: "A verified account with this email already exists." });
   }
 
   // 3. Generate OTP and hash password
@@ -152,36 +166,103 @@ export const sendOtp = async (req, res) => {
   const otp_expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
   // 4. Create or update user as unverified
-  const userData = { full_name, email, mobile, password_hash, otp, otp_expires_at, is_verified: false };
+  const userData = {
+    full_name,
+    email,
+    mobile,
+    password_hash,
+    otp,
+    otp_expires_at,
+    is_verified: false,
+  };
   await upsertUnverifiedUser(email, userData);
 
   // 5. Send OTP email
   try {
     await sendOtpEmail(email, otp);
-    res.status(200).json({ message: 'OTP sent to your email. Please verify.' });
+    res.status(200).json({ message: "OTP sent to your email. Please verify." });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to send OTP.' });
+    res.status(500).json({ message: "Failed to send OTP." });
   }
 };
 
 export const verifyOtpAndRegister = async (req, res) => {
-    // 1. Get email and OTP from request
-    const { email, otp } = req.body;
+  // 1. Get email and OTP from request
+  const { email, otp } = req.body;
 
-    // 2. Find unverified user
-    const user = await findUserByEmailAndStatus(email, false);
-    if (!user || user.otp !== otp) {
-        return res.status(400).json({ message: 'Invalid OTP.' });
+  // 2. Find unverified user
+  const user = await findUserByEmailAndStatus(email, false);
+  if (!user || user.otp !== otp) {
+    return res.status(400).json({ message: "Invalid OTP." });
+  }
+
+  // 3. Check if OTP has expired
+  if (new Date() > new Date(user.otp_expires_at)) {
+    return res.status(400).json({ message: "OTP has expired." });
+  }
+
+  // 4. Verify user and generate token
+  const verifiedUser = await verifyUser(email);
+  const token = generateToken(verifiedUser.id);
+
+  res.status(201).json({ token, user: verifiedUser });
+};
+
+
+/**
+ * @desc    Request a password reset
+ * @route   POST /api/auth/forgot-password
+ * @access  Public
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await findUserByEmail(email);
+
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+      await setUserResetToken(user.id, resetToken, resetTokenExpiry);
+      await sendPasswordResetEmail(user.email, resetToken);
     }
+    
+    
+    res.status(200).json({
+      success: true,
+      message: 'If an account with that email exists, a reset link has been sent.',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Internal Server Error' });
+  }
+};
 
-    // 3. Check if OTP has expired
-    if (new Date() > new Date(user.otp_expires_at)) {
-        return res.status(400).json({ message: 'OTP has expired.' });
+/**
+ * @desc    Reset password using a token
+ * @route   POST /api/auth/reset-password
+ * @access  Public
+ */
+export const resetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body;
+
+        if (!token || !password) {
+            return res.status(400).json({ success: false, error: 'Token and password are required.' });
+        }
+
+        const user = await findUserByResetToken(token);
+
+        if (!user || user.reset_token_expiry < new Date()) {
+            return res.status(400).json({ success: false, error: 'Invalid or expired password reset token.' });
+        }
+
+        await updateUserPassword(user.id, password);
+
+        res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'Internal Server Error' });
     }
-
-    // 4. Verify user and generate token
-    const verifiedUser = await verifyUser(email);
-    const token = generateToken(verifiedUser.id);
-
-    res.status(201).json({ token, user: verifiedUser });
 };

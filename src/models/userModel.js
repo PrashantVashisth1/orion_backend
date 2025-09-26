@@ -1,4 +1,3 @@
-import pool from '../config/db.js';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from "../generated/prisma/index.js";
 
@@ -109,4 +108,32 @@ export const verifyUser = async (email) => {
         },
     });
 }
+
+export const findUserByResetToken = async (token) => {
+  return await prisma.user.findUnique({
+    where: { reset_token: token },
+  });
+};
+
+export const updateUserPassword = async (userId, password) => {
+  const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  return await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password_hash: hashedPassword,
+      reset_token: null, // Clear the token after use
+      reset_token_expiry: null,
+    },
+  });
+};
+
+export const setUserResetToken = async (userId, token, expiry) => {
+  return await prisma.user.update({
+    where: { id: userId },
+    data: {
+      reset_token: token,
+      reset_token_expiry: expiry,
+    },
+  });
+};
 
