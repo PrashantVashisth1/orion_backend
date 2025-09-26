@@ -1,7 +1,11 @@
 import prisma from "../config/prismaClient.js";
+import { 
+    createNotificationsForAll, 
+    createNotificationForUser 
+} from './notificationController.js'; 
 
 // Create Session
-export const createSession = async (req, res) => {
+export const createSession = async (req, res,io) => {
   try {
     const { userId, type, title, dateTime, duration, registrationLink, ...data } = req.body;
 
@@ -10,6 +14,9 @@ export const createSession = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
+    // Determine the speaker/host name for the notification message
+    const hostName = user.full_name || 'A user';
 
     const session = await prisma.session.create({
       data: {
@@ -22,7 +29,21 @@ export const createSession = async (req, res) => {
         ...data
       }
     });
-
+     const notificationMessage = `${hostName} is going to host a session on "${session.title}"`;
+    
+    // 1. Broadcast real-time notification to all users
+    if (io) {
+        const notification = {
+            message: notificationMessage,
+            session: session,
+            sessionType: type 
+        };
+        io.emit('new-session-notification', notification);
+        console.log('New session created and real-time notification broadcasted:', notificationMessage);
+    }
+    
+    // 2. Create persistent notification for all users (excluding the author)
+    createNotificationsForAll({ message: notificationMessage, authorId: userId, sessionId: session.id });
     res.json(session);
   } catch (error) {
     console.error(error);

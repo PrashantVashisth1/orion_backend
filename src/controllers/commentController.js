@@ -1,26 +1,82 @@
+// import * as commentModel from "../models/commentModel.js";
+// import { 
+//     createNotificationsForAll, 
+//     createNotificationForUser 
+// } from './notificationController.js'; 
+
+// // ✅ Create Comment
+// export const createComment = async (req, res) => {
+//   try {
+//     const { postId, content } = req.body;
+//     const userId = req.user.id; // From authenticateToken middleware
+//     if(!userId || !postId || !content) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+//     const newComment = await commentModel.createComment({ userId, postId, content });
+//     return res.status(201).json({
+//       success: true,
+//       message: "Comment created successfully",
+//       data: newComment
+//     })
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Error creating comment",
+//       error: error.message
+//     });
+//   }
+// }
+
+// commentController.js
 import * as commentModel from "../models/commentModel.js";
+import prisma from "../config/prismaClient.js"; // Needed to look up the post author
+import { createNotificationForUser } from './notificationController.js'; // Added import
 
 // ✅ Create Comment
-export const createComment = async (req, res) => {
-  try {
-    const { postId, content } = req.body;
-    const userId = req.user.id; // From authenticateToken middleware
-    if(!userId || !postId || !content) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-    const newComment = await commentModel.createComment({ userId, postId, content });
-    return res.status(201).json({
-      success: true,
-      message: "Comment created successfully",
-      data: newComment
-    })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error creating comment",
-      error: error.message
+export const createComment = async (req, res, io) => { // Added 'io' parameter
+  try {
+    const { postId, content } = req.body;
+    const commenterId = req.user.id;
+    
+    if(!commenterId || !postId || !content) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    
+    // 1. Create the Comment
+    const newComment = await commentModel.createComment({ userId: commenterId, postId, content });
+    
+    // 2. Fetch Post Author ID for Notification
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { user_id: true }
     });
-  }
+
+    if (post && post.user_id !== commenterId) { // Do not notify if author comments on their own post
+        const commenterName = req.user.full_name || "Someone";
+        const notificationMessage = `${commenterName} commented on your post.`;
+        const postAuthorId = post.user_id;
+        
+        // a. Send real-time notification to the post author (target specific user)
+        if (io) {
+            io.to(postAuthorId.toString()).emit('new-comment-notification', { message: notificationMessage, postId, commentId: newComment.id });
+        }
+        
+        // b. Create persistent notification for the post author
+        createNotificationForUser({ message: notificationMessage, recipientId: postAuthorId, postId });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Comment created successfully",
+      data: newComment
+    })
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error creating comment",
+      error: error.message
+    });
+  }
 }
 
 // deleteComment

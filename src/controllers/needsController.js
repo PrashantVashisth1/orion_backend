@@ -13,7 +13,7 @@ import {
 /**
  * Create a new need post
  */
-export async function createNeed(req, res) {
+export async function createNeed(req, res,io) {
   try {
     const userId = req.user.id;
     const { formType, formData } = req.body;
@@ -60,6 +60,17 @@ export async function createNeed(req, res) {
     const needPost = await createNeedPost(userId, formType, formData);
 
     console.log('Need post created successfully:', needPost.id);
+
+    const authorName = req.user.full_name || "A user"; // Assuming full_name is available on req.user
+    const notificationMessage = `${authorName} has shared a new need: "${needPost.title}"`;
+
+     // 1. Broadcast real-time notification to all users
+    if (io) {
+        io.emit('new-need-notification', { message: notificationMessage, need: needPost });
+    }
+    
+    // 2. Create persistent notification for all users (excluding the author)
+    createNotificationsForAll({ message: notificationMessage, authorId: userId, needId: needPost.id });
 
     res.status(201).json({
       success: true,

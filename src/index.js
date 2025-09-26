@@ -8,6 +8,7 @@ import startupProfileRoutes from "./routes/startupProfileRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js"
 import trendingPostsRoutes from "./routes/trendingPostsRoutes.js";
 import sessionRoutes from './routes/sessionRoutes.js';
 import needsRoutes from "./routes/needsRoutes.js";
@@ -77,7 +78,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/startup", startupProfileRoutes);
 
 // Needs routes
-app.use("/api/needs", needsRoutes);
+app.use("/api/needs", needsRoutes(io));
 
 // Host session routes
 // app.use("/api/host-sessions", hostSessionRoutes);
@@ -86,16 +87,16 @@ app.use("/api/needs", needsRoutes);
 app.use("/api/posts", postRoutes(io));
 
 // Comment Routes
-app.use("/api/comments", commentRoutes);
+app.use("/api/comments", commentRoutes(io));
 
 // Like Routes
-app.use("/api", likeRoutes);
+app.use("/api", likeRoutes(io));
 
 // Trending Posts
 app.use("/api",trendingPostsRoutes);
 
 // Session Routes
-app.use('/api/sessions',sessionRoutes);
+app.use('/api/sessions',sessionRoutes(io));
 
 // Needs Routes
 app.use("/api/needs", needsRoutes);
@@ -104,7 +105,7 @@ app.use("/api/needs", needsRoutes);
 app.use("/api/activities", userActivityRoutes);
 
 //  Notification System
-
+app.use('/api/notifications', notificationRoutes);
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
