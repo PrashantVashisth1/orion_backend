@@ -51,29 +51,72 @@ export const companyDetailsSchema = Joi.object({
 });
 
 export const offeringsSchema = Joi.object({
-  products: Joi.array().items(Joi.string()).optional(),
-  services: Joi.array().items(Joi.string()).optional(),
-  pricing_model: Joi.string().max(100).optional().allow(''),
-  price_range: Joi.string().max(100).optional().allow(''),
-  target_customers: Joi.string().max(255).optional().allow(''),
-  revenue_streams: Joi.string().max(255).optional().allow(''),
-  unique_value_proposition: Joi.string().max(1000).optional().allow(''),
-  competitive_advantage: Joi.string().max(1000).optional().allow(''),
-  support_model: Joi.string().max(100).optional().allow(''),
-  onboarding_process: Joi.string().max(255).optional().allow(''),
-  customer_success_strategy: Joi.string().max(1000).optional().allow(''),
-  future_offerings: Joi.string().max(1000).optional().allow('')
+  // Array Fields - be more lenient with array validation
+  products: Joi.array().items(Joi.string().allow('')).default([]),
+  services: Joi.array().items(Joi.string().allow('')).default([]),
+  revenue_streams: Joi.array().items(Joi.string().allow('')).default([]),
+  partnerships: Joi.array().items(Joi.string().allow('')).default([]),
+  certifications: Joi.array().items(Joi.string().allow('')).default([]),
+  
+  // String Fields - be more lenient
+  pricing_model: Joi.string().max(100).allow('', null).optional(),
+  target_market: Joi.string().max(1000).allow('', null).optional(),
+  value_proposition: Joi.string().max(1000).allow('', null).optional(),
+  competitive_advantage: Joi.string().max(1000).allow('', null).optional(),
+  business_model: Joi.string().max(100).allow('', null).optional(),
 });
 
-export const interestsSchema = Joi.object({
-  primary_industry: Joi.string().min(2).max(100).required(),
-  secondary_industry: Joi.string().max(100).optional().allow(''),
-  primary_target_market: Joi.string().max(100).optional().allow(''),
-  geographic_focus: Joi.string().max(100).optional().allow(''),
-  market_description: Joi.string().max(1000).optional().allow(''),
-  partnership_goals: Joi.string().max(1000).optional().allow(''),
-  innovation_description: Joi.string().max(1000).optional().allow(''),
-  future_goals: Joi.string().max(1000).optional().allow('')
+
+// export const interestsSchema = Joi.object({
+//   primary_industry: Joi.string().min(2).max(100).required(),
+//   secondary_industry: Joi.string().max(100).optional().allow(''),
+//   primary_target_market: Joi.string().max(100).optional().allow(''),
+//   geographic_focus: Joi.string().max(100).optional().allow(''),
+//   market_description: Joi.string().max(1000).optional().allow(''),
+//   partnership_goals: Joi.string().max(1000).optional().allow(''),
+//   innovation_description: Joi.string().max(1000).optional().allow(''),
+//   future_goals: Joi.string().max(1000).optional().allow('')
+// });
+
+// Define the combined schema
+export const interestsAndRelatedSchema = Joi.object({
+    // Interests (The required fields from the original interestsSchema)
+    primary_industry: Joi.string().min(2).max(100).required(), // REQUIRED
+    secondary_industry: Joi.string().max(100).optional().allow(''),
+    primary_target_market: Joi.string().max(100).optional().allow(''),
+    geographic_focus: Joi.string().max(100).optional().allow(''),
+    market_description: Joi.string().max(1000).optional().allow(''),
+    partnership_goals: Joi.string().max(1000).optional().allow(''),
+    innovation_description: Joi.string().max(1000).optional().allow(''),
+    future_goals: Joi.string().max(1000).optional().allow(''),
+
+    // Technology Interests (Booleans are optional)
+    ai_ml: Joi.boolean().optional(),
+    blockchain: Joi.boolean().optional(),
+    cloud_computing: Joi.boolean().optional(),
+    cybersecurity: Joi.boolean().optional(),
+    iot: Joi.boolean().optional(),
+    fintech: Joi.boolean().optional(),
+    healthtech: Joi.boolean().optional(),
+    edtech: Joi.boolean().optional(),
+    sustainability_tech: Joi.boolean().optional(),
+    other_tech: Joi.string().max(255).optional().allow(''),
+
+    // Partnership Interests (Booleans are optional)
+    startup_partnerships: Joi.boolean().optional(),
+    enterprise_partnerships: Joi.boolean().optional(),
+    research_collaborations: Joi.boolean().optional(),
+    academic_partnerships: Joi.boolean().optional(),
+    government_contracts: Joi.boolean().optional(),
+    nonprofit_collaborations: Joi.boolean().optional(),
+
+    // Innovation Focus (Booleans are optional)
+    product_development: Joi.boolean().optional(),
+    process_innovation: Joi.boolean().optional(),
+    business_model_innovation: Joi.boolean().optional(),
+    sustainability_innovation: Joi.boolean().optional(),
+    social_impact: Joi.boolean().optional(),
+    disruptive_technology: Joi.boolean().optional()
 });
 
 export const technologyInterestsSchema = Joi.object({

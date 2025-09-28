@@ -185,18 +185,16 @@ model CompanyDetails {
 model Offerings {
   id                        Int            @id @default(autoincrement())
   startup_profile_id        Int            @unique
-  products                  Json?          @default("[]")
-  services                  Json?          @default("[]")
+  products                  String[]       @default([])
+  services                  String[]       @default([])
   pricing_model             String?
-  price_range               String?
-  target_customers          String?
-  revenue_streams           String?
-  unique_value_proposition  String?
+  target_market             String?
+  revenue_streams           String[]       @default([])  
+  partnerships              String[]       @default([])
+  certifications            String[]       @default([])
+  value_proposition         String?
   competitive_advantage     String?
-  support_model             String?
-  onboarding_process        String?
-  customer_success_strategy String?
-  future_offerings          String?
+  business_model            String?
   created_at                DateTime       @default(now())
   updated_at                DateTime       @updatedAt
   startup_profile           StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)

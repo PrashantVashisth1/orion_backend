@@ -19,10 +19,11 @@ import {
   companyDetailsSchema,
   offeringsSchema,
   combinedSectionsSchema,
-  interestsSchema,
+  // interestsSchema,
   technologyInterestsSchema,
   partnershipInterestsSchema,
-  innovationFocusSchema
+  innovationFocusSchema,
+  interestsAndRelatedSchema
 } from "../utils/validation/startupProfileValidation.js";
 
 
@@ -324,10 +325,78 @@ export async function updateCompanyDetails(req, res) {
  * PATCH /api/startup/profile/offerings
  * Update offerings section
  */
+// export async function updateOfferings(req, res) {
+//   try {
+//     console.log(req.body);
+//     const { error } = offeringsSchema.validate(req.body);
+//     if (error) {
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: 'VALIDATION_ERROR',
+//           message: 'Validation failed',
+//           details: error.details.map(detail => ({
+//             field: detail.path.join('.'),
+//             message: detail.message
+//           }))
+//         }
+//       });
+//     }
+
+//     // The middleware already checked and created the profile
+//     const profileId = req.profile.id;
+
+//     const offerings = await upsertOfferings(profileId, req.body);
+//     const completionPercentage = await updateCompletionPercentage(profileId);
+
+//     return res.json({
+//       success: true,
+//       data: {
+//         offerings: offerings,
+//         completion_percentage: completionPercentage
+//       },
+//       message: 'Offerings updated successfully'
+//     });
+//   } catch (error) {
+//     console.error('Update offerings error:', error);
+//     return res.status(500).json({
+//       success: false,
+//       error: {
+//         code: 'INTERNAL_ERROR',
+//         message: 'Internal server error'
+//       }
+//     });
+//   }
+// }
+
 export async function updateOfferings(req, res) {
   try {
-    const { error } = offeringsSchema.validate(req.body);
+    // Clean and normalize the data before validation
+    const cleanedBody = {
+      ...req.body,
+      // Ensure arrays are arrays, not strings
+      products: Array.isArray(req.body.products) ? req.body.products : [],
+      services: Array.isArray(req.body.services) ? req.body.services : [],
+      revenue_streams: Array.isArray(req.body.revenue_streams) ? req.body.revenue_streams : [],
+      partnerships: Array.isArray(req.body.partnerships) ? req.body.partnerships : [],
+      certifications: Array.isArray(req.body.certifications) ? req.body.certifications : [],
+      
+      // Ensure strings are strings, not null/undefined
+      pricing_model: req.body.pricing_model || '',
+      target_market: req.body.target_market || '',
+      competitive_advantage: req.body.competitive_advantage || '',
+      value_proposition: req.body.value_proposition || '',
+      business_model: req.body.business_model || '',
+    };
+    
+    // Validate the cleaned data
+    const { error, value } = offeringsSchema.validate(cleanedBody, { 
+      abortEarly: false,
+      stripUnknown: true 
+    });
+    
     if (error) {
+      console.log('Validation Error Details:', error.details);
       return res.status(400).json({
         success: false,
         error: {
@@ -335,16 +404,30 @@ export async function updateOfferings(req, res) {
           message: 'Validation failed',
           details: error.details.map(detail => ({
             field: detail.path.join('.'),
-            message: detail.message
+            message: detail.message,
+            value: detail.context?.value,
+            type: typeof detail.context?.value
           }))
         }
       });
     }
 
-    // The middleware already checked and created the profile
+    // Check if profile exists
+    if (!req.profile || !req.profile.id) {
+      console.log('Profile not found in request');
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'PROFILE_ERROR',
+          message: 'Profile not found'
+        }
+      });
+    }
+
     const profileId = req.profile.id;
 
-    const offerings = await upsertOfferings(profileId, req.body);
+    const offerings = await upsertOfferings(profileId, value);
+
     const completionPercentage = await updateCompletionPercentage(profileId);
 
     return res.json({
@@ -356,12 +439,12 @@ export async function updateOfferings(req, res) {
       message: 'Offerings updated successfully'
     });
   } catch (error) {
-    console.error('Update offerings error:', error);
     return res.status(500).json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Internal server error'
+        message: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       }
     });
   }
@@ -373,7 +456,7 @@ export async function updateOfferings(req, res) {
  */
 export async function updateInterests(req, res) {
   try {
-    const { error } = interestsSchema.validate(req.body);
+    const { error } = interestsAndRelatedSchema.validate(req.body);
     if (error) {
       return res.status(400).json({
         success: false,

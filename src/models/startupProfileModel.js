@@ -198,50 +198,60 @@ export async function upsertCompanyDetails(startupProfileId, companyDetailsData)
  * @param {Object} offeringsData
  * @returns {Promise<Object>} updated offerings
  */
+
 export async function upsertOfferings(startupProfileId, offeringsData) {
   try {
-    // Step 1: check if an entry already exists
-    const existing = await prisma.offerings.findUnique({
-      where: { startup_profile_id: startupProfileId },
-    });
-    let mergedData;
-    if (existing) {
-      // Step 2: merge old and new
-      mergedData = {
-        ...existing,
-        ...offeringsData,
-        services: [
-          ...(existing.services || []),
-          ...(offeringsData.services || []),
-        ],
-        products: [
-          ...(existing.products || []),
-          ...(offeringsData.products || []),
-        ],
-      };
-    } else {
-      mergedData = offeringsData;
-    }
+    // Clean the data before saving - ensure no undefined values
+    const cleanedData = {
+      // Arrays
+      products: Array.isArray(offeringsData.products) 
+        ? offeringsData.products.filter(p => p && p.trim() !== '') 
+        : [],
+      services: Array.isArray(offeringsData.services) 
+        ? offeringsData.services.filter(s => s && s.trim() !== '') 
+        : [],
+      revenue_streams: Array.isArray(offeringsData.revenue_streams) 
+        ? offeringsData.revenue_streams.filter(r => r && r.trim() !== '') 
+        : [],
+      partnerships: Array.isArray(offeringsData.partnerships) 
+        ? offeringsData.partnerships.filter(p => p && p.trim() !== '') 
+        : [],
+      certifications: Array.isArray(offeringsData.certifications) 
+        ? offeringsData.certifications.filter(c => c && c.trim() !== '') 
+        : [],
+      
+      // String fields - ensure they're not undefined or null
+      pricing_model: offeringsData.pricing_model || null,
+      target_market: offeringsData.target_market || null,
+      competitive_advantage: offeringsData.competitive_advantage || null,
+      value_proposition: offeringsData.value_proposition || null,
+      business_model: offeringsData.business_model || null,
+    };
+
     const offerings = await prisma.offerings.upsert({
       where: {
         startup_profile_id: startupProfileId,
       },
       create: {
         startup_profile_id: startupProfileId,
-        ...mergedData,
+        ...cleanedData,
       },
       update: {
-        ...mergedData,
+        ...cleanedData,
       },
     });
-
+    
+    console.log('Database result:', JSON.stringify(offerings, null, 2));
     return offerings;
   } catch (error) {
     console.error('Error upserting offerings:', error);
+    console.error('Error details:', error.message);
+    if (error.code) {
+      console.error('Error code:', error.code);
+    }
     throw error;
   }
 }
-
 /**
  * Update or create interests section
  * @param {number} startupProfileId
@@ -270,31 +280,152 @@ export async function upsertOfferings(startupProfileId, offeringsData) {
 //   }
 // }
 
-export async function upsertInterests(startupProfileId, interestsData) {
-  try {
-    const existing = await prisma.interests.findUnique({
-      where: { startup_profile_id: startupProfileId },
-    });
-    const mergedData = existing ? { ...existing, ...interestsData } : interestsData;
-    const interests = await prisma.interests.upsert({
-      where: {
-        startup_profile_id: startupProfileId,
-      },
-      create: {
-        startup_profile_id: startupProfileId,
-        ...interestsData,
-      },
-      update: {
-        ...mergedData,
-      },
-    });
+// export async function upsertInterests(startupProfileId, interestsData) {
+//   try {
+//     const existing = await prisma.interests.findUnique({
+//       where: { startup_profile_id: startupProfileId },
+//     });
+//     const mergedData = existing ? { ...existing, ...interestsData } : interestsData;
+//     const interests = await prisma.interests.upsert({
+//       where: {
+//         startup_profile_id: startupProfileId,
+//       },
+//       create: {
+//         startup_profile_id: startupProfileId,
+//         ...interestsData,
+//       },
+//       update: {
+//         ...mergedData,
+//       },
+//     });
 
-    return interests;
-  } catch (error) {
-    console.error('Error upserting interests:', error);
-    throw error;
-  }
+//     return interests;
+//   } catch (error) {
+//     console.error('Error upserting interests:', error);
+//     throw error;
+//   }
+// }
+
+/**
+ * Upserts (updates or creates) the four related interests models
+ * in the database based on a single combined payload.
+ * * @param {number} startupProfileId - The ID of the parent StartupProfile.
+ * @param {object} combinedData - The full payload from the frontend.
+ * @returns {Promise<object>} - The combined updated data.
+ */
+export async function upsertInterests(startupProfileId, combinedData) {
+    
+    // --- 1. Separate Payloads for each Model ---
+
+    // Data for the 'interests' table
+    const interestsPayload = {
+        primary_industry: combinedData.primary_industry,
+        secondary_industry: combinedData.secondary_industry,
+        primary_target_market: combinedData.primary_target_market,
+        geographic_focus: combinedData.geographic_focus,
+        market_description: combinedData.market_description,
+        partnership_goals: combinedData.partnership_goals,
+        innovation_description: combinedData.innovation_description,
+        future_goals: combinedData.future_goals,
+    };
+
+    // Data for the 'technology_interests' table
+    const technologyInterestsPayload = {
+        ai_ml: combinedData.ai_ml,
+        blockchain: combinedData.blockchain,
+        cloud_computing: combinedData.cloud_computing,
+        cybersecurity: combinedData.cybersecurity,
+        iot: combinedData.iot,
+        fintech: combinedData.fintech,
+        healthtech: combinedData.healthtech,
+        edtech: combinedData.edtech,
+        sustainability_tech: combinedData.sustainability_tech,
+        other_tech: combinedData.other_tech,
+    };
+
+    // Data for the 'partnership_interests' table
+    const partnershipInterestsPayload = {
+        startup_partnerships: combinedData.startup_partnerships,
+        enterprise_partnerships: combinedData.enterprise_partnerships,
+        research_collaborations: combinedData.research_collaborations,
+        academic_partnerships: combinedData.academic_partnerships,
+        government_contracts: combinedData.government_contracts,
+        nonprofit_collaborations: combinedData.nonprofit_collaborations,
+    };
+
+    // Data for the 'innovation_focus' table
+    const innovationFocusPayload = {
+        product_development: combinedData.product_development,
+        process_innovation: combinedData.process_innovation,
+        business_model_innovation: combinedData.business_model_innovation,
+        sustainability_innovation: combinedData.sustainability_innovation,
+        social_impact: combinedData.social_impact,
+        disruptive_technology: combinedData.disruptive_technology,
+    };
+
+    // --- 2. Perform Atomic Upserts in a Transaction ---
+
+    try {
+        const [
+            updatedInterests,
+            updatedTechInterests,
+            updatedPartnershipInterests,
+            updatedInnovationFocus
+        ] = await prisma.$transaction([
+            // Upsert Interests
+            prisma.interests.upsert({
+                where: { startup_profile_id: startupProfileId },
+                update: interestsPayload,
+                create: {
+                    startup_profile_id: startupProfileId,
+                    ...interestsPayload
+                },
+            }),
+            // Upsert TechnologyInterests
+            prisma.technologyInterests.upsert({
+                where: { startup_profile_id: startupProfileId },
+                update: technologyInterestsPayload,
+                create: {
+                    startup_profile_id: startupProfileId,
+                    ...technologyInterestsPayload
+                },
+            }),
+            // Upsert PartnershipInterests
+            prisma.partnershipInterests.upsert({
+                where: { startup_profile_id: startupProfileId },
+                update: partnershipInterestsPayload,
+                create: {
+                    startup_profile_id: startupProfileId,
+                    ...partnershipInterestsPayload
+                },
+            }),
+            // Upsert InnovationFocus
+            prisma.innovationFocus.upsert({
+                where: { startup_profile_id: startupProfileId },
+                update: innovationFocusPayload,
+                create: {
+                    startup_profile_id: startupProfileId,
+                    ...innovationFocusPayload
+                },
+            }),
+        ]);
+        
+        // --- 3. Return Combined Data (for API response) ---
+        // Combine the results to provide a comprehensive response to the frontend
+        return {
+            ...updatedInterests,
+            technologyInterests: updatedTechInterests,
+            partnershipInterests: updatedPartnershipInterests,
+            innovationFocus: updatedInnovationFocus,
+        };
+
+    } catch (error) {
+        // Log the specific Prisma error for debugging
+        console.error("Prisma Transaction Error in upsertInterests:", error);
+        throw new Error('Failed to update interests and related sections.');
+    }
 }
+
 
 /**
  * Update or create technology interests section
