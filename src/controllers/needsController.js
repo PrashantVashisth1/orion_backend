@@ -9,6 +9,7 @@ import {
   getNeedsStats,
   searchNeeds
 } from '../models/needsModel.js';
+import { createNotificationsForAll } from './notificationController.js';
 
 /**
  * Create a new need post

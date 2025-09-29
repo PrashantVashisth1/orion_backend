@@ -1,7 +1,7 @@
 import prisma from "../config/prismaClient.js";
 import { 
-    createNotificationsForAll, 
-    createNotificationForUser 
+    createNotificationsForAll 
+    // createNotificationForUser 
 } from './notificationController.js'; 
 
 // Create Session
