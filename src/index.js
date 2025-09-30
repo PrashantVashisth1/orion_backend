@@ -43,7 +43,9 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 4000;
 
 // Set up CORS (allow all origins by default, customize as needed)
-app.use(cors());
+app.use(cors({
+  origin: '*'
+}));
 
 // Set up HTTP request logging
 app.use(morgan("dev"));
