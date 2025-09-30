@@ -30,7 +30,7 @@
 // commentController.js
 import * as commentModel from "../models/commentModel.js";
 import prisma from "../config/prismaClient.js"; // Needed to look up the post author
-import { createNotificationForUser } from './notificationController.js'; // Added import
+// import { createNotificationForUser } from './notificationController.js'; // Added import
 
 // ✅ Create Comment
 export const createComment = async (req, res, io) => { // Added 'io' parameter
@@ -51,19 +51,19 @@ export const createComment = async (req, res, io) => { // Added 'io' parameter
         select: { user_id: true }
     });
 
-    if (post && post.user_id !== commenterId) { // Do not notify if author comments on their own post
-        const commenterName = req.user.full_name || "Someone";
-        const notificationMessage = `${commenterName} commented on your post.`;
-        const postAuthorId = post.user_id;
+    // if (post && post.user_id !== commenterId) { // Do not notify if author comments on their own post
+    //     const commenterName = req.user.full_name || "Someone";
+    //     const notificationMessage = `${commenterName} commented on your post.`;
+    //     const postAuthorId = post.user_id;
         
-        // a. Send real-time notification to the post author (target specific user)
-        if (io) {
-            io.to(postAuthorId.toString()).emit('new-comment-notification', { message: notificationMessage, postId, commentId: newComment.id });
-        }
+    //     // a. Send real-time notification to the post author (target specific user)
+    //     if (io) {
+    //         io.to(postAuthorId.toString()).emit('new-comment-notification', { message: notificationMessage, postId, commentId: newComment.id });
+    //     }
         
-        // b. Create persistent notification for the post author
-        createNotificationForUser({ message: notificationMessage, recipientId: postAuthorId, postId });
-    }
+    //     // b. Create persistent notification for the post author
+    //     createNotificationForUser({ message: notificationMessage, recipientId: postAuthorId, postId });
+    // }
 
     return res.status(201).json({
       success: true,

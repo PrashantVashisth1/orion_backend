@@ -1,9 +1,9 @@
 // postController.js
 import * as postModel from "../models/postModel.js";
-import { 
-    createNotificationsForAll, 
-    createNotificationForUser 
-} from './notificationController.js'; 
+// import { 
+//     createNotificationsForAll, 
+//     createNotificationForUser 
+// } from './notificationController.js'; 
 
 // ✅ Create Post
 export const createPost = async (req, res,io) => {
@@ -23,16 +23,16 @@ export const createPost = async (req, res,io) => {
       documents,
     });
     const authorName = post.author?.full_name || "A user";
-    const notificationMessage = `${authorName} has created a new post!`;
+//     const notificationMessage = `${authorName} has created a new post!`;
 
     // 1. Broadcast real-time notification to all users
-    if (io) {
-      io.emit('new-post-notification', { message: notificationMessage, post });
-    }
+//     if (io) {
+//       io.emit('new-post-notification', { message: notificationMessage, post });
+//     }
     
     // 2. Create persistent notification for all users (excluding the author)
     // NOTE: This runs asynchronously and does not block the response
-    createNotificationsForAll({ message: notificationMessage, authorId: userId, postId: post.id });
+    // createNotificationsForAll({ message: notificationMessage, authorId: userId, postId: post.id });
 
     res.status(201).json({ success: true, data: post });
   } catch (error) {

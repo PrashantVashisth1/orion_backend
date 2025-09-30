@@ -35,7 +35,7 @@
 // likeController.js
 import * as likeModel from "../models/likeModel.js";
 import prisma from "../config/prismaClient.js"; // Needed to look up the post author
-import { createNotificationForUser } from './notificationController.js'; // Added import
+// import { createNotificationForUser } from './notificationController.js'; // Added import
 import { getPost } from './postController.js'; // Assuming you can access getPost to fetch post data
 
 // Like a post
@@ -57,22 +57,22 @@ export const likePost = async (req, res, io) => { // Added 'io' parameter
         select: { user_id: true }
     });
     
-    if (!post) {
-        // Log an error but proceed since the like was successfully created.
-        console.error(`Post with ID ${postId} not found for notification.`);
-    } else if (post.user_id !== likerId) { // Do not notify if author likes their own post
-        const likerName = req.user.full_name || "Someone";
-        const notificationMessage = `${likerName} liked your post.`;
-        const postAuthorId = post.user_id;
+    // if (!post) {
+    //     // Log an error but proceed since the like was successfully created.
+    //     console.error(`Post with ID ${postId} not found for notification.`);
+    // } else if (post.user_id !== likerId) { // Do not notify if author likes their own post
+    //     const likerName = req.user.full_name || "Someone";
+    //     const notificationMessage = `${likerName} liked your post.`;
+    //     const postAuthorId = post.user_id;
 
-        // a. Send real-time notification to the post author (target specific user)
-        if (io) {
-            io.to(postAuthorId.toString()).emit('new-like-notification', { message: notificationMessage, postId });
-        }
+    //     // a. Send real-time notification to the post author (target specific user)
+    //     if (io) {
+    //         io.to(postAuthorId.toString()).emit('new-like-notification', { message: notificationMessage, postId });
+    //     }
         
-        // b. Create persistent notification for the post author
-        createNotificationForUser({ message: notificationMessage, recipientId: postAuthorId, postId });
-    }
+    //     // b. Create persistent notification for the post author
+    //     createNotificationForUser({ message: notificationMessage, recipientId: postAuthorId, postId });
+    // }
 
     return res.status(201).json({ success: true, message: "Post liked successfully", data: newLike });
   } catch (error) {

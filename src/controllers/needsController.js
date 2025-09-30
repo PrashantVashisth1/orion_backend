@@ -9,7 +9,7 @@ import {
   getNeedsStats,
   searchNeeds
 } from '../models/needsModel.js';
-import { createNotificationsForAll } from './notificationController.js';
+// import { createNotificationsForAll } from './notificationController.js';
 
 /**
  * Create a new need post
@@ -62,16 +62,16 @@ export async function createNeed(req, res,io) {
 
     console.log('Need post created successfully:', needPost.id);
 
-    const authorName = req.user.full_name || "A user"; // Assuming full_name is available on req.user
-    const notificationMessage = `${authorName} has shared a new need: "${needPost.title}"`;
+    // const authorName = req.user.full_name || "A user"; // Assuming full_name is available on req.user
+    // const notificationMessage = `${authorName} has shared a new need: "${needPost.title}"`;
 
-     // 1. Broadcast real-time notification to all users
-    if (io) {
-        io.emit('new-need-notification', { message: notificationMessage, need: needPost });
-    }
+    //  // 1. Broadcast real-time notification to all users
+    // if (io) {
+    //     io.emit('new-need-notification', { message: notificationMessage, need: needPost });
+    // }
     
     // 2. Create persistent notification for all users (excluding the author)
-    createNotificationsForAll({ message: notificationMessage, authorId: userId, needId: needPost.id });
+    // createNotificationsForAll({ message: notificationMessage, authorId: userId, needId: needPost.id });
 
     res.status(201).json({
       success: true,
