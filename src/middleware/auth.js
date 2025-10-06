@@ -18,6 +18,8 @@ export async function authenticateToken(req, res, next) {
     return res.status(401).json({ error: 'Access token required' });
   }
 
+  // "h3rY9XnJmKpLz0Q2vW5s8dA7tFcGjMhBqR4uZxVoN1yTwEkOi+LxSfU6V3pDzC0H"
+
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     
