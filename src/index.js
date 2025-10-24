@@ -193,6 +193,7 @@ import trendingPostsRoutes from "./routes/trendingPostsRoutes.js";
 import createSessionRoutes from './routes/sessionRoutes.js';
 import createNeedsRoutes from "./routes/needsRoutes.js";
 import userActivityRoutes from "./routes/userActivityRoutes.js";
+import getFundedRoutes from './routes/getFundedRoutes.js';
 
 // Import middleware and config
 import { authenticateToken } from "./middleware/auth.js";
@@ -213,6 +214,9 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+
+// Make resource files publicly accessible
+app.use('/resources', express.static('public_resources'));
 
 // Initialize Socket.IO with proper authentication
 console.log('🔌 Initializing Socket.IO...');
@@ -289,6 +293,9 @@ app.use("/api", trendingPostsRoutes);
 
 // User Activity Routes (no io needed)
 app.use("/api/activities", userActivityRoutes);
+
+// Get Funded Resources Routes (no io needed)
+app.use('/api/get-funded', getFundedRoutes);
 
 // Routes that need Socket.IO - pass io instance
 app.use("/api/posts", createPostRoutes(io));

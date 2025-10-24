@@ -365,3 +365,21 @@ model Notification {
   @@index([userId, isRead])
   @@map("notifications")
 }
+
+
+// 1. For the ResourcesSection
+model ResourceFile {
+  id         Int              @id @default(autoincrement())
+  title      String
+  fileName   String
+  url        String // This will store the public URL
+  category   ResourceCategory @relation(fields: [categoryId], references: [id])
+  categoryId Int
+  createdAt  DateTime         @default(now())
+}
+
+model ResourceCategory {
+  id    Int            @id @default(autoincrement())
+  title String         @unique
+  files ResourceFile[]
+}

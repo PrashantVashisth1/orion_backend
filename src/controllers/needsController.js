@@ -588,6 +588,18 @@
 //   }
 // }
 
+
+import {
+  createNeedPost,
+  getAllNeeds,
+  getNeedById,
+  getNeedsByUser,
+  updateNeed,
+  deleteNeed,
+  getNeedsStats,
+  searchNeeds
+} from '../models/needsModel.js';
+
 import * as notificationService from "../services/notificationService.js";
 import { broadcastExceptUser } from "../services/socketManager.js";
 
