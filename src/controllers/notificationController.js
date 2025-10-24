@@ -1,90 +1,171 @@
-// controllers/notificationController.js
-
-import prisma from "../config/prismaClient.js";
+import * as notificationService from '../services/notificationService.js';
 
 /**
- * Creates persistent notifications for all users (excluding the author).
- * @param {string} message - The notification message.
- * @param {number} authorId - The ID of the user who triggered the event.
- * @param {number} [postId] - The ID of the related post.
- * @param {number} [sessionId] - The ID of the related session.
- * @param {number} [needId] - The ID of the related need.
+ * Get all notifications for the authenticated user
  */
-export const createNotificationsForAll = async ({ message, authorId, postId, sessionId, needId }) => {
-  try {
-    const allUsers = await prisma.user.findMany({
-      where: { id: { not: authorId } },
-      select: { id: true },
-    });
-
-    const notificationData = allUsers.map(user => ({
-      userId: user.id,
-      message,
-      postId,
-      sessionId,
-      needId,
-    }));
-
-    if (notificationData.length > 0) {
-      await prisma.notification.createMany({
-        data: notificationData,
-      });
-      console.log(`Successfully created ${notificationData.length} notifications.`);
-    }
-  } catch (error) {
-    console.error("Error creating notifications:", error);
-  }
-};
-
-/**
- * Creates a notification for a specific user.
- * @param {string} message - The notification message.
- * @param {number} recipientId - The ID of the user who receives the notification.
- * @param {number} [postId] - The ID of the related post.
- */
-export const createNotificationForUser = async ({ message, recipientId, postId }) => {
-  try {
-    await prisma.notification.create({
-      data: {
-        userId: recipientId,
-        message,
-        postId,
-      },
-    });
-    console.log(`Notification created for user ${recipientId}.`);
-  } catch (error) {
-    console.error("Error creating notification for user:", error);
-  }
-};
-
-/**
- * Fetches all unread notifications for a specific user.
- */
-export const fetchUnreadNotifications = async (req, res) => {
+export async function getNotifications(req, res) {
   try {
     const userId = req.user.id;
-    const notifications = await prisma.notification.findMany({
-      where: { userId, isRead: false },
-      orderBy: { createdAt: "desc" },
+    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+
+    const result = await notificationService.getUserNotifications(userId, {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      unreadOnly: unreadOnly === 'true'
     });
-    res.json(notifications);
+
+    res.json({
+      success: true,
+      data: result
+    });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch notifications" });
+    console.error('Get notifications error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to retrieve notifications',
+        details: error.message
+      }
+    });
   }
-};
+}
 
 /**
- * Marks a notification as read.
+ * Get unread notification count
  */
-export const markNotificationAsRead = async (req, res) => {
+export async function getUnreadCount(req, res) {
   try {
-    const { id } = req.params;
-    await prisma.notification.update({
-      where: { id: parseInt(id) },
-      data: { isRead: true },
+    const userId = req.user.id;
+    const count = await notificationService.getUnreadCount(userId);
+
+    res.json({
+      success: true,
+      data: { count }
     });
-    res.status(200).send("Notification marked as read");
   } catch (error) {
-    res.status(500).json({ error: "Failed to mark notification as read" });
+    console.error('Get unread count error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to get unread count',
+        details: error.message
+      }
+    });
   }
-};
+}
+
+/**
+ * Mark specific notifications as read
+ */
+export async function markAsRead(req, res) {
+  try {
+    const userId = req.user.id;
+    const { notificationIds } = req.body;
+
+    if (!notificationIds || !Array.isArray(notificationIds)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'notificationIds must be an array'
+        }
+      });
+    }
+
+    const result = await notificationService.markNotificationsAsRead(
+      notificationIds.map(id => parseInt(id)),
+      userId
+    );
+
+    res.json({
+      success: true,
+      data: { updated: result.count },
+      message: 'Notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Mark as read error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to mark notifications as read',
+        details: error.message
+      }
+    });
+  }
+}
+
+/**
+ * Mark all notifications as read
+ */
+export async function markAllAsRead(req, res) {
+  try {
+    const userId = req.user.id;
+    const result = await notificationService.markAllNotificationsAsRead(userId);
+
+    res.json({
+      success: true,
+      data: { updated: result.count },
+      message: 'All notifications marked as read'
+    });
+  } catch (error) {
+    console.error('Mark all as read error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to mark all notifications as read',
+        details: error.message
+      }
+    });
+  }
+}
+
+/**
+ * Delete a notification
+ */
+export async function deleteNotification(req, res) {
+  try {
+    const userId = req.user.id;
+    const { id } = req.params;
+
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_ID',
+          message: 'Valid notification ID is required'
+        }
+      });
+    }
+
+    const result = await notificationService.deleteNotification(parseInt(id), userId);
+
+    if (result.count === 0) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Notification not found'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete notification error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to delete notification',
+        details: error.message
+      }
+    });
+  }
+}
