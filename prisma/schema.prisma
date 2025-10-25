@@ -95,6 +95,8 @@ model StartupProfile {
   id                    Int                   @id @default(autoincrement())
   user_id               Int                   @unique
   is_complete           Boolean               @default(false)
+  isTrending           Boolean               @default(false)
+  isStartupOfTheWeek   Boolean               @default(false)
   completion_percentage Int                   @default(0)
   created_at            DateTime              @default(now())
   updated_at            DateTime              @updatedAt
