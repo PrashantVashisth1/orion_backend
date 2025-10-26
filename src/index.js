@@ -221,6 +221,12 @@ app.use('/resources', express.static('public_resources'));
 // Initialize Socket.IO with proper authentication
 console.log('🔌 Initializing Socket.IO...');
 const io = initializeSocket(httpServer);
+// ADD THIS DEBUG CODE
+console.log('====================================');
+console.log('🔍 DEBUG: Socket.IO instance created:', !!io);
+console.log('🔍 DEBUG: Socket.IO type:', typeof io);
+console.log('🔍 DEBUG: Socket.IO engine:', !!io.engine);
+console.log('====================================');
 
 const PORT = process.env.PORT || 4000;
 

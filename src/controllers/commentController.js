@@ -149,7 +149,7 @@ export const createComment = async (req, res, io) => {
         message,
         postId
       });
-      
+      console.log(notification);
       // Emit real-time notification via Socket.IO
       if (io) {
         await emitToUser(io, post.user_id, notification);

@@ -41,10 +41,12 @@ import { likePost, unlikePost, getLikeCount, getLikes } from "../controllers/lik
 import { authenticateToken } from "../middleware/auth.js";
 
 export default (io) => {
+  console.log('🔍 [ROUTE] likeRoutes received io:', !!io);
   const router = express.Router();
 
   // Like a post - pass io to controller
   router.post("/posts/:postId/likes", authenticateToken, (req, res) => {
+    console.log('🔍 [ROUTE] Inside like route, io available:', !!io);
     likePost(req, res, io);
   });
 
