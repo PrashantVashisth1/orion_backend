@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const upload = multer({
+const upload = multer({
   storage: multerS3({
     s3: s3,
     bucket: process.env.S3_BUCKET_NAME,

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getResources, getTrendingStartups, submitForFunding } from '../controllers/getFundedController.js';
 import { authenticateToken } from '../middleware/auth.js';
-import { upload } from '../middleware/fileUpload.js'; 
+import { pitchDeckUpload, handlePitchDeckUploadError } from '../middleware/pitchDeckUploadMiddleware.js';
 
 const router = Router();
 
@@ -11,9 +11,10 @@ router.get('/resources', getResources);
 router.get('/trending', getTrendingStartups);
 
 router.post(
-  '/funding-opportunity/submit', 
-  authenticateToken,
-  upload.single("pitchDeck"),
-  submitForFunding
+  '/funding-opportunity/submit',
+  authenticateToken, 
+  pitchDeckUpload.single('pitchDeck'),
+  submitForFunding,
+  handlePitchDeckUploadError
 );
 export default router;
