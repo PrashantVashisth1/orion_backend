@@ -76,3 +76,49 @@ export const getTrendingStartups = async (req, res) => {
     res.status(500).json({ message: 'Error fetching trending startups', error: error.message });
   }
 };
+
+// Handle pitch deck submission for funding opportunity
+export const submitForFunding = async (req, res) => {
+  // req.user comes from the 'auth' middleware
+  console.log('--- submitForFunding Controller ---'); // <-- Log entry point
+  console.log('req.user:', req.user); // <-- Log user (from auth)
+  console.log('req.file:', req.file); // <-- Log file (from multer)
+  console.log('req.body:', req.body);
+  const { id: userId } = req.user; 
+
+  // req.file comes from the 'fileUpload' (multer-s3) middleware
+  if (!req.file) {
+    return res.status(400).json({ message: 'No pitch deck file uploaded.' });
+  }
+
+  // Extract file details provided by multer-s3
+  const { originalname: fileName, location: filePath } = req.file; 
+  // 'location' is the S3 URL
+
+  try {
+    // Create a record in the database
+    const submission = await prisma.fundingSubmission.create({
+      data: {
+        userId: parseInt(userId, 10), // Ensure userId is an integer
+        fileName: fileName,
+        filePath: filePath, // Store the S3 URL
+        status: "SUBMITTED", // Initial status
+      },
+    });
+
+    // Send success response
+    res.status(201).json({ 
+      message: 'Pitch deck submitted successfully!', 
+      submission: {
+        id: submission.id,
+        fileName: submission.fileName,
+        submittedAt: submission.createdAt,
+      } 
+    });
+
+  } catch (error) {
+    console.error("Error submitting pitch deck:", error);
+    // Consider deleting the uploaded S3 file if DB insert fails (optional cleanup)
+    res.status(500).json({ message: 'Error saving submission record', error: error.message });
+  }
+};

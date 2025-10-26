@@ -47,6 +47,7 @@ model User {
   sessions           Session[]
   needs              Need[]
   notifications      Notification[]
+  funding_submissions FundingSubmission[]
 
   @@map("users")
 }
@@ -369,7 +370,6 @@ model Notification {
 }
 
 
-// 1. For the ResourcesSection
 model ResourceFile {
   id         Int              @id @default(autoincrement())
   title      String
@@ -384,4 +384,19 @@ model ResourceCategory {
   id    Int            @id @default(autoincrement())
   title String         @unique
   files ResourceFile[]
+}
+
+
+
+model FundingSubmission {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  fileName  String   
+  filePath  String   
+  status    String   @default("SUBMITTED") 
+  createdAt DateTime @default(now())
+
+  @@index([userId]) // Add an index for faster lookups by user
+  @@map("funding_submissions") // Optional: Define the table name explicitly
 }
