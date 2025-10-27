@@ -12,7 +12,8 @@ import {
   updateTechnologyInterests,
   updatePartnershipInterests,
   updateInnovationFocus,
-  updateCombinedSections
+  updateCombinedSections,
+  getPublicStartupProfile
 } from '../controllers/startupProfileController.js';
 import { checkAndCreateProfile } from '../middleware/startupProfileMiddleware.js';
 import { uploadFile, deleteFile } from '../controllers/uploadController.js';
@@ -29,6 +30,7 @@ router.use(profileRateLimit);
 router.get('/profile', getProfile);
 router.post('/profile', createProfile);
 router.delete('/profile', deleteProfile);
+router.get('/profile/:userId', getPublicStartupProfile);
 
 // Profile completion status
 router.get('/profile/completion', getCompletionStatus);

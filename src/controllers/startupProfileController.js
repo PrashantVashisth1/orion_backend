@@ -13,6 +13,8 @@ import {
   deleteStartupProfile
 } from '../models/startupProfileModel.js';
 
+import prisma from '../config/prismaClient.js';
+
 import {
   personalInfoSchema,
   businessDetailsSchema,
@@ -63,6 +65,65 @@ export async function getProfile(req, res) {
     });
   }
 }
+
+/**
+ * Fetches a public startup profile by User ID.
+ * Includes associated details needed for the profile page.
+ */
+export const getPublicStartupProfile = async (req, res) => {
+  const { userId } = req.params; // Get userId from URL parameter
+
+  if (!userId || isNaN(parseInt(userId, 10))) {
+    return res.status(400).json({ message: 'Valid User ID is required.' });
+  }
+
+  const userIdInt = parseInt(userId, 10);
+
+  try {
+    const startupProfile = await prisma.startupProfile.findUnique({
+      where: {
+        user_id: userIdInt, // Find the profile linked to this user ID
+      },
+      include: {
+        // Include all related data needed for the profile page
+        user: { // Basic user info (needed for name, maybe email depending on privacy)
+          select: {
+            id: true,
+            full_name: true,
+            email: true, // Consider privacy implications
+            created_at: true,
+          }
+        },
+        personal_info: true,
+        company_details: true,
+        business_details: true,
+        offerings: true,
+        interests: true,
+        // Include other relations if needed for the profile page
+        // innovation_focus: true,
+        // partnership_interests: true,
+        // technology_interests: true,
+      }
+    });
+
+    if (!startupProfile) {
+      return res.status(404).json({ message: 'Startup profile not found for this user.' });
+    }
+
+    // Optionally, check if the user associated has the STARTUP role?
+    // const user = await prisma.user.findUnique({ where: { id: userIdInt } });
+    // if (!user || user.role !== 'STARTUP') {
+    //   return res.status(404).json({ message: 'Profile not found or user is not a startup.' });
+    // }
+
+
+    res.status(200).json(startupProfile);
+
+  } catch (error) {
+    console.error("Error fetching public startup profile:", error);
+    res.status(500).json({ message: 'Error fetching startup profile', error: error.message });
+  }
+};
 
 /**
  * POST /api/startup/profile
