@@ -205,6 +205,7 @@ export async function deleteProfile(req, res) {
  */
 export async function getCompletionStatus(req, res) {
   try {
+    // console.log("req user", req.user);
     const userId = req.user.id;
     const profile = await getStartupProfile(userId);
 

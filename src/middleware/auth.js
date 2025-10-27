@@ -33,6 +33,7 @@ export async function authenticateToken(req, res, next) {
     req.user = { id: user.id };
     next();
   } catch (err) {
+    console.log("first")
     return res.status(403).json({ error: 'Invalid or expired token' });
   }
 }

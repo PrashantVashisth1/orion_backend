@@ -9,6 +9,7 @@ import prisma from '../config/prismaClient.js';
 
 export async function getStartupProfile(userId) {
   try {
+    console.log(userId)
     const profile = await prisma.startupProfile.findUnique({
       where: {
         user_id: userId,

@@ -30,10 +30,11 @@ router.use(profileRateLimit);
 router.get('/profile', getProfile);
 router.post('/profile', createProfile);
 router.delete('/profile', deleteProfile);
-router.get('/profile/:userId', getPublicStartupProfile);
 
 // Profile completion status
 router.get('/profile/completion', getCompletionStatus);
+
+router.get('/profile/:userId', getPublicStartupProfile);
 
 // File upload routes
 router.post('/upload', uploadFile);
