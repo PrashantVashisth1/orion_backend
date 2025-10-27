@@ -600,6 +600,8 @@ import {
   searchNeeds
 } from '../models/needsModel.js';
 
+import  prisma  from "../config/prismaClient.js";
+
 import * as notificationService from "../services/notificationService.js";
 import { broadcastExceptUser } from "../services/socketManager.js";
 
