@@ -10,18 +10,35 @@ const SALT_ROUNDS = 10;
  * @param {Object} userData - { fullName, email, mobile, password }
  * @returns {Promise<Object>} newly created user data (without password hash)
  */
-export async function createUser({ fullName, email, mobile, password }) {
+// export async function createUser({ fullName, email, mobile, password }) {
+//   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+//   const newUser = await prisma.user.create({
+//     data: {
+//       full_name: fullName,
+//       email,
+//       mobile,
+//       password_hash: hashedPassword
+//     }
+//   });
+//   return newUser;
+// }
+
+export async function createUser({ fullName, email, mobile, password, role = "STARTUP" }) {
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
   const newUser = await prisma.user.create({
     data: {
       full_name: fullName,
       email,
       mobile,
-      password_hash: hashedPassword
-    }
+      password_hash: hashedPassword,
+      role, 
+    },
   });
+
   return newUser;
 }
+
 
 /**
  * Find a user by email
