@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 
 // Mapping frontend form types to database enum values
 const FORM_TYPE_MAPPING = {
-  'live-projects': 'LIVE_PROJECTS',
+  'live_projects': 'LIVE_PROJECTS',
   'internship': 'INTERNSHIP',
   'research': 'RESEARCH',
-  'csr-initiative': 'CSR_INITIATIVE'
+  'csr_initiative': 'CSR_INITIATIVE'
 };
 
 /**
@@ -26,7 +26,7 @@ export async function createNeedPost(userId, formType, formData) {
     let title, description, imageUrl, contactInfo, location, duration, skills, compensation, detailsJson;
     
     switch (formType) {
-      case 'live-projects':
+      case 'live_projects':
         title = formData.projectTitle;
         description = formData.projectDescription;
         imageUrl = formData.LiveProjectsImage;
@@ -125,7 +125,7 @@ export async function createNeedPost(userId, formType, formData) {
         };
         break;
         
-      case 'csr-initiative':
+      case 'csr_initiative':
         title = formData.initiativeType;
         description = formData.csrDescription;
         imageUrl = formData.CsrInitiativeImage;

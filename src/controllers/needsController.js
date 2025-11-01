@@ -626,7 +626,8 @@ export async function createNeed(req, res, io) {
     }
 
     // Validate form type
-    const validFormTypes = ['live-projects', 'internship', 'research', 'csr-initiative'];
+    const validFormTypes = ['live_projects', 'internship', 'research', 'csr_initiative'];
+    console.log(formType, "formType")
     if (!validFormTypes.includes(formType)) {
       return res.status(400).json({
         success: false,
@@ -731,7 +732,7 @@ function validateFormData(formType, formData) {
   const errors = [];
 
   switch (formType) {
-    case 'live-projects':
+    case 'live_projects':
       if (!formData.projectTitle?.trim()) {
         errors.push('Project title is required');
       }
@@ -803,7 +804,7 @@ function validateFormData(formType, formData) {
       }
       break;
 
-    case 'csr-initiative':
+    case 'csr_initiative':
       if (!formData.initiativeType?.trim()) {
         errors.push('Initiative type is required');
       }
@@ -1037,38 +1038,231 @@ export async function getMyNeeds(req, res) {
 /**
  * Update a need post
  */
+// export async function updateNeedPost(req, res) {
+//   try {
+//     const userId = req.user.id;
+//     const { id } = req.params;
+//     const updateData = req.body;
+
+//     if (!id || isNaN(parseInt(id))) {
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: 'INVALID_ID',
+//           message: 'Valid need ID is required'
+//         }
+//       });
+//     }
+
+//     if (!updateData || Object.keys(updateData).length === 0) {
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: 'NO_UPDATE_DATA',
+//           message: 'Update data is required'
+//         }
+//       });
+//     }
+
+//     const updatedNeed = await updateNeed(parseInt(id), userId, updateData);
+
+//     res.json({
+//       success: true,
+//       data: {
+//         need: updatedNeed
+//       },
+//       message: 'Need updated successfully'
+//     });
+//   } catch (error) {
+//     console.error('Update need error:', error);
+    
+//     if (error.message.includes('not found or unauthorized')) {
+//       return res.status(404).json({
+//         success: false,
+//         error: {
+//           code: 'NEED_NOT_FOUND',
+//           message: 'Need post not found or unauthorized'
+//         }
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       error: {
+//         code: 'INTERNAL_ERROR',
+//         message: 'Failed to update need',
+//         details: error.message
+//       }
+//     });
+//   }
+// }
+
+
+/**
+ * Update a need post
+ */
+// export async function updateNeedPost(req, res) {
+//   try {
+//     const userId = req.user.id;
+//     const { id } = req.params;
+    
+//     // 1. CHANGE: Expect the same body structure as your createNeed function
+//     const { formType, formData } = req.body;
+
+//     if (!id || isNaN(parseInt(id))) {
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: 'INVALID_ID',
+//           message: 'Valid need ID is required'
+//         }
+//       });
+//     }
+
+//     // 2. ADDED: Validate the new data just like you do in createNeed
+//     // const validation = validateFormData(formType, formData);
+//     // if (!validation.isValid) {
+//     //   return res.status(400).json({
+//     //     success: false,
+//     //     error: {
+//     //       code: 'VALIDATION_ERROR',
+//     //       message: 'Form validation failed',
+//     //       details: validation.errors
+//     //     }
+//     //   });
+//     // }
+
+//     // 3. ADDED: Construct the data object to pass to your model
+//     // This ensures the title/description are updated, and the details_json is fully replaced
+//     const title = formData.projectTitle || formData.job_title || formData.researchTitle || formData.initiativeType;
+//     const description = formData.projectDescription || formData.description || formData.researchDescription || formData.csrDescription;
+
+//     const updateData = {
+//         title: title,
+//         description: description,
+//         type: formType.toUpperCase(),
+//         details_json: formData, // This will overwrite the old details_json with the new form data
+//     };
+    
+//     // 4. CHANGE: Call your `updateNeed` model function
+//     // Your model is responsible for the final check: "does this (id) belong to this (userId)?"
+//     const updatedNeed = await updateNeed(parseInt(id), userId, updateData);
+
+//     res.json({
+//       success: true,
+//       data: {
+//         need: updatedNeed
+//       },
+//       message: 'Need updated successfully'
+//     });
+//   } catch (error) {
+//     console.error('Update need error:', error);
+    
+//     // Your existing error handling is perfect and will catch auth failures
+//     if (error.message.includes('not found or unauthorized')) {
+//       return res.status(404).json({
+//         success: false,
+//         error: {
+//           code: 'NEED_NOT_FOUND',
+//           message: 'Need post not found or unauthorized'
+//         }
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       error: {
+//         code: 'INTERNAL_ERROR',
+//         message: 'Failed to update need',
+//         details: error.message
+//       }
+//     });
+//   }
+// }
+
 export async function updateNeedPost(req, res) {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const updateData = req.body;
+    const { formType, formData } = req.body; // e.g., { formType: 'live_projects', formData: {...} }
 
     if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({
         success: false,
-        error: {
-          code: 'INVALID_ID',
-          message: 'Valid need ID is required'
-        }
+        error: { code: 'INVALID_ID', message: 'Valid need ID is required' }
       });
     }
 
-    if (!updateData || Object.keys(updateData).length === 0) {
+    // Run validation (this part is now working)
+    const validation = validateFormData(formType, formData);
+    if (!validation.isValid) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'NO_UPDATE_DATA',
-          message: 'Update data is required'
+          code: 'VALIDATION_ERROR',
+          message: 'Form validation failed',
+          details: validation.errors
         }
       });
     }
 
+    const title = formData.projectTitle || formData.job_title || formData.researchTitle || formData.initiativeType;
+    const description = formData.projectDescription || formData.description || formData.researchDescription || formData.csrDescription;
+    
+    // 2. Extract standard helper fields
+    const location = formData.location || formData.projectLocation || null;
+    const duration = formData.duration || formData.projectDuration || formData.researchDuration || formData.csrDuration || null;
+    const skills = formData.skills || formData.projectSkills || formData.min_skills || formData.researchSkills || null;
+
+    // 3. Intelligently determine the correct compensation value
+    let compensation = null;
+    
+    if (formType === 'live_projects') {
+      // Check which radio button was selected
+      if (formData.projectCompensation === 'paid-above-6k') {
+        compensation = formData.projectCompensationSpecify; // e.g., "10000"
+      } else {
+        compensation = formData.projectCompensation; // e.g., "3000-6000"
+      }
+    } else if (formType === 'internship') {
+      if (formData.stipend === 'paid-intern-above-6k') {
+        compensation = formData.stipendSpecify;
+      } else {
+        compensation = formData.stipend;
+      }
+    } else if (formType === 'research') {
+      if (formData.researchStipend === 'paid-research-above-6k') {
+        compensation = formData.researchStipendSpecify;
+      } else {
+        compensation = formData.researchStipend;
+      }
+    } else if (formType === 'csr_initiative') {
+      if (formData.csrStipend === 'paid-csr-above-6k') {
+        compensation = formData.csrStipendSpecify;
+      } else {
+        compensation = formData.csrStipend || formData.csrCompensation;
+      }
+    }
+
+    // This object now contains ALL fields to be updated
+    const updateData = {
+        title: title,
+        description: description,
+        type: formType.toUpperCase(),
+        location: location,
+        duration: duration,
+        skills: skills,
+        compensation: compensation,
+        details_json: formData, // And finally, overwrite the JSON blob
+    };
+
+    // Your model function `updateNeed` will handle the authorization
     const updatedNeed = await updateNeed(parseInt(id), userId, updateData);
 
     res.json({
       success: true,
       data: {
-        need: updatedNeed
+        need: updatedNeed // This returned need now has correct top-level fields
       },
       message: 'Need updated successfully'
     });
