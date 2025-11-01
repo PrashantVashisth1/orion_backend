@@ -43,6 +43,7 @@ export async function createNeedPost(userId, formType, formData) {
           : formData.projectCompensation;
         
         detailsJson = {
+          projectCompanyName: formData.companyName,
           projectTitle: formData.projectTitle,
           projectDescription: formData.projectDescription,
           projectSkills: formData.projectSkills,
@@ -77,6 +78,7 @@ export async function createNeedPost(userId, formType, formData) {
           : formData.stipend;
         
         detailsJson = {
+          projectCompanyName: formData.companyName,
           jobTitle: formData.job_title,
           description: formData.description,
           openFor: formData.open_for,
@@ -110,6 +112,7 @@ export async function createNeedPost(userId, formType, formData) {
           : formData.researchStipend;
         
         detailsJson = {
+          projectCompanyName: formData.companyName,
           researchTitle: formData.researchTitle,
           researchDescription: formData.researchDescription,
           researchOpenFor: formData.researchOpenFor,
@@ -141,6 +144,7 @@ export async function createNeedPost(userId, formType, formData) {
           : formData.csrStipend || formData.csrCompensation;
         
         detailsJson = {
+          projectCompanyName: formData.companyName,
           initiativeType: formData.initiativeType,
           csrDescription: formData.csrDescription,
           csrDuration: formData.csrDuration,

@@ -611,6 +611,46 @@ export async function createNeed(req, res, io) {
     const userId = req.user.id;
     const { formType, formData } = req.body;
 
+    // --- START COMPANY NAME FIX (Your Code) ---
+    const startupProfile = await prisma.startupProfile.findUnique({
+      where: { user_id: userId },
+      select: { id: true }
+    });
+
+    // Handle case where startup profile might not exist
+    if (!startupProfile) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'PROFILE_NOT_FOUND',
+          message: 'Startup profile not found for this user.'
+        }
+      });
+    }
+
+    const startUpId = startupProfile.id;
+
+    const companyProfile = await prisma.companyDetails.findUnique({
+      where: {
+        startup_profile_id: startUpId
+      },
+      select: { company_name: true }
+    });
+
+    if (!companyProfile || !companyProfile.company_name) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'PROFILE_INCOMPLETE',
+          message: 'You must have a company name in your profile to post a need.'
+        }
+      });
+    }
+
+    // Securely inject the company name into the formData
+    formData.companyName = companyProfile.company_name;
+    // --- END COMPANY NAME FIX ---
+
     // ... your validation code ...
     console.log('Creating need post:', { userId, formType, formData });
 
@@ -653,7 +693,7 @@ export async function createNeed(req, res, io) {
 
     // Create the need post
     const needPost = await createNeedPost(userId, formType, formData);
-    console.log('Need post created successfully:', needPost.id);
+    console.log('Need post created successfully:', needPost);
 
     // Notify all users except the creator
     const user = await prisma.user.findUnique({
@@ -1038,147 +1078,6 @@ export async function getMyNeeds(req, res) {
 /**
  * Update a need post
  */
-// export async function updateNeedPost(req, res) {
-//   try {
-//     const userId = req.user.id;
-//     const { id } = req.params;
-//     const updateData = req.body;
-
-//     if (!id || isNaN(parseInt(id))) {
-//       return res.status(400).json({
-//         success: false,
-//         error: {
-//           code: 'INVALID_ID',
-//           message: 'Valid need ID is required'
-//         }
-//       });
-//     }
-
-//     if (!updateData || Object.keys(updateData).length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         error: {
-//           code: 'NO_UPDATE_DATA',
-//           message: 'Update data is required'
-//         }
-//       });
-//     }
-
-//     const updatedNeed = await updateNeed(parseInt(id), userId, updateData);
-
-//     res.json({
-//       success: true,
-//       data: {
-//         need: updatedNeed
-//       },
-//       message: 'Need updated successfully'
-//     });
-//   } catch (error) {
-//     console.error('Update need error:', error);
-    
-//     if (error.message.includes('not found or unauthorized')) {
-//       return res.status(404).json({
-//         success: false,
-//         error: {
-//           code: 'NEED_NOT_FOUND',
-//           message: 'Need post not found or unauthorized'
-//         }
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       error: {
-//         code: 'INTERNAL_ERROR',
-//         message: 'Failed to update need',
-//         details: error.message
-//       }
-//     });
-//   }
-// }
-
-
-/**
- * Update a need post
- */
-// export async function updateNeedPost(req, res) {
-//   try {
-//     const userId = req.user.id;
-//     const { id } = req.params;
-    
-//     // 1. CHANGE: Expect the same body structure as your createNeed function
-//     const { formType, formData } = req.body;
-
-//     if (!id || isNaN(parseInt(id))) {
-//       return res.status(400).json({
-//         success: false,
-//         error: {
-//           code: 'INVALID_ID',
-//           message: 'Valid need ID is required'
-//         }
-//       });
-//     }
-
-//     // 2. ADDED: Validate the new data just like you do in createNeed
-//     // const validation = validateFormData(formType, formData);
-//     // if (!validation.isValid) {
-//     //   return res.status(400).json({
-//     //     success: false,
-//     //     error: {
-//     //       code: 'VALIDATION_ERROR',
-//     //       message: 'Form validation failed',
-//     //       details: validation.errors
-//     //     }
-//     //   });
-//     // }
-
-//     // 3. ADDED: Construct the data object to pass to your model
-//     // This ensures the title/description are updated, and the details_json is fully replaced
-//     const title = formData.projectTitle || formData.job_title || formData.researchTitle || formData.initiativeType;
-//     const description = formData.projectDescription || formData.description || formData.researchDescription || formData.csrDescription;
-
-//     const updateData = {
-//         title: title,
-//         description: description,
-//         type: formType.toUpperCase(),
-//         details_json: formData, // This will overwrite the old details_json with the new form data
-//     };
-    
-//     // 4. CHANGE: Call your `updateNeed` model function
-//     // Your model is responsible for the final check: "does this (id) belong to this (userId)?"
-//     const updatedNeed = await updateNeed(parseInt(id), userId, updateData);
-
-//     res.json({
-//       success: true,
-//       data: {
-//         need: updatedNeed
-//       },
-//       message: 'Need updated successfully'
-//     });
-//   } catch (error) {
-//     console.error('Update need error:', error);
-    
-//     // Your existing error handling is perfect and will catch auth failures
-//     if (error.message.includes('not found or unauthorized')) {
-//       return res.status(404).json({
-//         success: false,
-//         error: {
-//           code: 'NEED_NOT_FOUND',
-//           message: 'Need post not found or unauthorized'
-//         }
-//       });
-//     }
-
-//     res.status(500).json({
-//       success: false,
-//       error: {
-//         code: 'INTERNAL_ERROR',
-//         message: 'Failed to update need',
-//         details: error.message
-//       }
-//     });
-//   }
-// }
 
 export async function updateNeedPost(req, res) {
   try {
@@ -1192,6 +1091,30 @@ export async function updateNeedPost(req, res) {
         error: { code: 'INVALID_ID', message: 'Valid need ID is required' }
       });
     }
+
+    // --- START COMPANY NAME FIX (Your Code) ---
+    const startupProfile = await prisma.startupProfile.findUnique({
+      where: { user_id: userId },
+      select: { id: true }
+    });
+
+    if (!startupProfile) {
+      return res.status(403).json({ success: false, error: { code: 'PROFILE_NOT_FOUND', message: 'Startup profile not found.' }});
+    }
+
+    const startUpId = startupProfile.id;
+
+    const companyProfile = await prisma.companyDetails.findUnique({
+      where: { startup_profile_id: startUpId },
+      select: { company_name: true }
+    });
+
+    if (companyProfile && companyProfile.company_name) {
+      formData.companyName = companyProfile.company_name;
+    } else {
+      console.warn(`User ${userId} is editing a post without a company name.`);
+    }
+    // --- END COMPANY NAME FIX ---
 
     // Run validation (this part is now working)
     const validation = validateFormData(formType, formData);
