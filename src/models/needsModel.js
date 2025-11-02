@@ -383,7 +383,7 @@ export async function updateNeed(needId, userId, updateData) {
     // Filter allowed fields
     const allowedFields = [
       'title', 'description', 'image_url', 'contact_info', 
-      'details_json', 'location', 'duration', 'skills', 'compensation'
+      'details_json', 'location', 'duration', 'skills', 'compensation',
     ];
     
     const filteredData = {};

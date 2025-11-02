@@ -1085,6 +1085,8 @@ export async function updateNeedPost(req, res) {
     const { id } = req.params;
     const { formType, formData } = req.body; // e.g., { formType: 'live_projects', formData: {...} }
 
+    console.log("formdata", formData)
+
     if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({
         success: false,
@@ -1129,13 +1131,34 @@ export async function updateNeedPost(req, res) {
       });
     }
 
-    const title = formData.projectTitle || formData.job_title || formData.researchTitle || formData.initiativeType;
+    // --- THIS IS THE FIX ---
+
+    // 1. Extract standard top-level fields
+    const title = formData.projectTitle || formData.job_title || formData.researchTitle || formData.initiativeType || formData.jobTitle;
     const description = formData.projectDescription || formData.description || formData.researchDescription || formData.csrDescription;
     
     // 2. Extract standard helper fields
     const location = formData.location || formData.projectLocation || null;
     const duration = formData.duration || formData.projectDuration || formData.researchDuration || formData.csrDuration || null;
     const skills = formData.skills || formData.projectSkills || formData.min_skills || formData.researchSkills || null;
+
+    // 3. *** ADDED THESE LINES ***
+    const openFor = formData.openFor || formData.open_for || formData.researchOpenFor || null;
+    const fulltime = formData.fulltime || null;
+    const extendable = formData.extendable || formData.projectExtendable || formData.researchExtendable || null;
+    const members = formData.members || null; // For CSR
+    const mode = formData.mode || formData.projectMode || null;
+    // --- END ADD ---
+
+    
+    // 4. Extract contact info
+    const contact_info = {
+      email: formData.contact_email || formData.projectEmail || formData.researchEmail || formData.csrEmail || 'Not specified',
+      phone: formData.contact_phone || formData.projectPhone || formData.researchPhone || formData.csrPhone || null,
+      cvEmail: formData.projectCvEmail || formData.internshipCvEmail || formData.researchCvEmail || null
+    };
+
+    // --- END FIX ---
 
     // 3. Intelligently determine the correct compensation value
     let compensation = null;
