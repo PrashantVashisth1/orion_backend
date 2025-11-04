@@ -14,7 +14,7 @@ export default (io) => {
   const router = express.Router();
 
   // Create post - pass io to controller
-  router.post("/", isStartupVerified, authenticateToken,  (req, res) => {
+  router.post("/",  authenticateToken, isStartupVerified,  (req, res) => {
     createPost(req, res, io);
   });
 
@@ -22,7 +22,7 @@ export default (io) => {
   router.get("/", getAllPosts);
 
   // Get single post
-  router.get("/:id", getPost);
+  router.get("/:id", authenticateToken, getPost);
 
   // Update post
   router.put("/:id",  authenticateToken, isStartupVerified, updatePost);
