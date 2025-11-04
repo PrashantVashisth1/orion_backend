@@ -366,6 +366,7 @@ export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       include: postInclude,
+      orderBy: { created_at: 'desc' },
     });
     console.log(posts)
     res.json({ success: true, data: posts });
