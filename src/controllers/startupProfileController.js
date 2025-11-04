@@ -30,6 +30,109 @@ import {
 
 
 /**
+ * POST /api/profile/submit-for-review
+ * @desc    Allows a startup to submit their completed profile for manual verification.
+ * @access  Private (Startup only)
+ */
+export const submitForReview = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // 1. Find the user's main startup profile
+    const startupProfile = await prisma.startupProfile.findUnique({
+      where: { user_id: userId },
+      include: {
+        // Include all 5 sections to check them
+        personal_info: true,
+        company_details: true,
+        business_details: true,
+        interests: true,
+        offerings: true,
+      },
+    });
+
+    if (!startupProfile) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: "PROFILE_NOT_FOUND",
+          message: "No profile data found. Please start by saving your Personal Info.",
+        },
+      });
+    }
+
+    // 2. --- Validation Check ---
+    // We check if the records exist and if key required fields are filled.
+    const errors = [];
+
+    if (!startupProfile.personal_info || !startupProfile.personal_info.first_name) {
+      errors.push("Personal Info");
+    }
+    if (!startupProfile.business_details || !startupProfile.business_details.job_title) {
+      errors.push("Business Details");
+    }
+    if (!startupProfile.company_details || !startupProfile.company_details.company_name) {
+      errors.push("Company Details");
+    }
+    if (!startupProfile.interests || !startupProfile.interests.primary_industry) {
+      errors.push("Interests");
+    }
+    if (!startupProfile.offerings) {
+      // Offerings has no strictly required fields in the schema, so we just check if it's been created.
+      errors.push("Offerings");
+    }
+
+    // 3. If any checks failed, return a specific error
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INCOMPLETE_PROFILE",
+          message: `Your profile is incomplete. Please fill out and save all required fields in the following sections: ${errors.join(
+            ", "
+          )}`,
+        },
+      });
+    }
+
+    // 4. --- Mark as Submitted ---
+    // All checks passed! Update the USER model, not the profile model.
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        has_submitted_profile: true,
+      },
+    });
+
+    // 5. Return success and the updated user data
+    // (This helps the frontend update its auth state)
+    res.status(200).json({
+      success: true,
+      message: "Profile submitted for review successfully!",
+      data: {
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          is_startup_verified: updatedUser.is_startup_verified,
+          has_submitted_profile: updatedUser.has_submitted_profile,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error submitting for review:", error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_ERROR",
+        message: "An error occurred while submitting your profile.",
+      },
+    });
+  }
+};
+
+
+/**
  * GET /api/startup/profile
  * Get user's startup profile with all sections
  */

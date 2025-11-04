@@ -184,7 +184,19 @@ export async function login(req, res) {
     const token = generateToken(user.id);
 
     // Remove sensitive fields
-    const { password_hash, ...userData } = user;
+    // const { password_hash, ...userData } = user;
+
+    const userData = {
+      id: user.id,
+      full_name: user.full_name,
+      email: user.email,
+      mobile: user.mobile,
+      role: user.role,
+      is_startup_verified: user.is_startup_verified, 
+      has_submitted_profile: user.has_submitted_profile, 
+      last_login: user.last_login,
+      created_at: user.created_at
+    };
 
     return res.json({
       success: true,

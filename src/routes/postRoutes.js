@@ -7,12 +7,14 @@ import {
   getAllPosts,
 } from "../controllers/postController.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { isStartupVerified } from "../middleware/isStartupVerified.js";
+
 
 export default (io) => {
   const router = express.Router();
 
   // Create post - pass io to controller
-  router.post("/", authenticateToken, (req, res) => {
+  router.post("/", isStartupVerified, authenticateToken,  (req, res) => {
     createPost(req, res, io);
   });
 
@@ -23,10 +25,10 @@ export default (io) => {
   router.get("/:id", getPost);
 
   // Update post
-  router.put("/:id", authenticateToken, updatePost);
+  router.put("/:id",  authenticateToken, isStartupVerified, updatePost);
 
   // Delete post
-  router.delete("/:id", authenticateToken, deletePost);
-  
+  router.delete("/:id", authenticateToken, isStartupVerified, deletePost);
+
   return router;
 };

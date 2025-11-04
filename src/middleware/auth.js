@@ -30,7 +30,10 @@ export async function authenticateToken(req, res, next) {
     }
     
     // attach user information to request
-    req.user = { id: user.id };
+    // req.user = { id: user.id };
+    
+
+    req.user = user;
     next();
   } catch (err) {
     console.log("first")

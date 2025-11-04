@@ -24,30 +24,32 @@ enum SessionType {
 }
 
 model User {
-  id                 Int             @id @default(autoincrement())
-  full_name          String
-  email              String          @unique
-  mobile             String?
-  password_hash      String
-  email_verified     Boolean         @default(false)
-  otp                String?
-  otp_expires_at     DateTime?
-  reset_token        String?         @unique
-  reset_token_expiry DateTime?
-  is_verified        Boolean         @default(false)
-  is_active          Boolean         @default(true)
-  last_login         DateTime?
-  created_at         DateTime        @default(now())
-  updated_at         DateTime        @updatedAt
-  role               UserRole        @default(STARTUP)
-  startup_profile    StartupProfile?
-  posts              Post[]
-  likes              Like[]
-  comments           Comment[]
-  sessions           Session[]
-  needs              Need[]
-  notifications      Notification[]
-  funding_submissions FundingSubmission[]
+  id                    Int                 @id @default(autoincrement())
+  full_name             String
+  email                 String              @unique
+  mobile                String?
+  password_hash         String
+  email_verified        Boolean             @default(false)
+  otp                   String?
+  otp_expires_at        DateTime?
+  reset_token           String?             @unique
+  reset_token_expiry    DateTime?
+  is_verified           Boolean             @default(false)
+  is_active             Boolean             @default(true)
+  last_login            DateTime?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+  role                  UserRole            @default(STARTUP)
+  startup_profile       StartupProfile?
+  posts                 Post[]
+  likes                 Like[]
+  comments              Comment[]
+  sessions              Session[]
+  needs                 Need[]
+  notifications         Notification[]
+  funding_submissions   FundingSubmission[]
+  is_startup_verified   Boolean             @default(false)
+  has_submitted_profile Boolean             @default(false)
 
   @@map("users")
 }
@@ -96,8 +98,8 @@ model StartupProfile {
   id                    Int                   @id @default(autoincrement())
   user_id               Int                   @unique
   is_complete           Boolean               @default(false)
-  isTrending           Boolean               @default(false)
-  isStartupOfTheWeek   Boolean               @default(false)
+  isTrending            Boolean               @default(false)
+  isStartupOfTheWeek    Boolean               @default(false)
   completion_percentage Int                   @default(0)
   created_at            DateTime              @default(now())
   updated_at            DateTime              @updatedAt
@@ -186,21 +188,21 @@ model CompanyDetails {
 }
 
 model Offerings {
-  id                        Int            @id @default(autoincrement())
-  startup_profile_id        Int            @unique
-  products                  String[]       @default([])
-  services                  String[]       @default([])
-  pricing_model             String?
-  target_market             String?
-  revenue_streams           String[]       @default([])  
-  partnerships              String[]       @default([])
-  certifications            String[]       @default([])
-  value_proposition         String?
-  competitive_advantage     String?
-  business_model            String?
-  created_at                DateTime       @default(now())
-  updated_at                DateTime       @updatedAt
-  startup_profile           StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
+  id                    Int            @id @default(autoincrement())
+  startup_profile_id    Int            @unique
+  products              String[]       @default([])
+  services              String[]       @default([])
+  pricing_model         String?
+  target_market         String?
+  revenue_streams       String[]       @default([])
+  partnerships          String[]       @default([])
+  certifications        String[]       @default([])
+  value_proposition     String?
+  competitive_advantage String?
+  business_model        String?
+  created_at            DateTime       @default(now())
+  updated_at            DateTime       @updatedAt
+  startup_profile       StartupProfile @relation(fields: [startup_profile_id], references: [id], onDelete: Cascade)
 
   @@map("offerings")
 }
@@ -369,7 +371,6 @@ model Notification {
   @@map("notifications")
 }
 
-
 model ResourceFile {
   id         Int              @id @default(autoincrement())
   title      String
@@ -386,15 +387,13 @@ model ResourceCategory {
   files ResourceFile[]
 }
 
-
-
 model FundingSubmission {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  fileName  String   
-  filePath  String   
-  status    String   @default("SUBMITTED") 
+  fileName  String
+  filePath  String
+  status    String   @default("SUBMITTED")
   createdAt DateTime @default(now())
 
   @@index([userId]) // Add an index for faster lookups by user

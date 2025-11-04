@@ -13,7 +13,8 @@ import {
   updatePartnershipInterests,
   updateInnovationFocus,
   updateCombinedSections,
-  getPublicStartupProfile
+  getPublicStartupProfile,
+  submitForReview
 } from '../controllers/startupProfileController.js';
 import { checkAndCreateProfile } from '../middleware/startupProfileMiddleware.js';
 import { uploadFile, deleteFile } from '../controllers/uploadController.js';
@@ -50,5 +51,7 @@ router.patch('/profile/technology-interests', checkAndCreateProfile, updateTechn
 router.patch('/profile/partnership-interests', checkAndCreateProfile, updatePartnershipInterests);
 router.patch('/profile/innovation-focus', checkAndCreateProfile, updateInnovationFocus);
 router.patch('/profile/combined-sections', checkAndCreateProfile, updateCombinedSections);
+
+router.post('/profile/submit-for-review', submitForReview);
 
 export default router;
