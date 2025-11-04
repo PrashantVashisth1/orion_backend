@@ -133,9 +133,68 @@
 //     res.status(500).json({ success: false, message: "Failed to fetch posts" });
 //   }
 // };
+import prisma from "../config/prismaClient.js";
 import * as postModel from "../models/postModel.js";
 import * as notificationService from "../services/notificationService.js";
 import { broadcastExceptUser } from "../services/socketManager.js";
+
+const postInclude = {
+  author: {
+    select: {
+      id: true,
+      full_name: true,
+      role: true,
+      startup_profile: {
+        select: {
+          personal_info: {
+            select: {
+              profile_picture: true,
+            },
+          },
+          company_details: {
+            select: {
+              company_logo: true,
+              company_name: true,
+            },
+          },
+        },
+      },
+    },
+  },
+  likes: {
+    select: { user_id: true },
+  },
+  comments: {
+    include: {
+      // --- THIS IS THE FIX ---
+      user: { // Changed from 'author' to 'user' to match your schema
+      // --- END OF FIX ---
+        select: {
+          id: true,
+          full_name: true,
+          role: true,
+          startup_profile: {
+            select: {
+              personal_info: { select: { profile_picture: true } },
+              company_details: {
+                select: { company_logo: true, company_name: true },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      created_at: 'asc',
+    },
+  },
+  _count: {
+    select: {
+      likes: true,
+      comments: true,
+    },
+  },
+};
 
 export const createPost = async (req, res, io) => {
   try {
@@ -305,7 +364,10 @@ export const deletePost = async (req, res) => {
 // ✅ Get All Posts
 export const getAllPosts = async (req, res) => {
   try {
-    const posts = await postModel.getAllPosts();
+    const posts = await prisma.post.findMany({
+      include: postInclude,
+    });
+    console.log(posts)
     res.json({ success: true, data: posts });
   } catch (error) {
     console.error("Error fetching posts:", error);
