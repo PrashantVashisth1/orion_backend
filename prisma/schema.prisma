@@ -121,7 +121,7 @@ model PersonalInfo {
   startup_profile_id Int            @unique
   profile_picture    String?
   first_name         String
-  last_name          String
+  last_name          String?
   email              String
   phone              String
   location           String
@@ -139,7 +139,7 @@ model BusinessDetails {
   id                 Int            @id @default(autoincrement())
   startup_profile_id Int            @unique
   job_title          String
-  company            String?
+  company            String
   industry           String
   experience         String?
   business_type      String?
@@ -148,7 +148,7 @@ model BusinessDetails {
   funding_stage      String?
   skills             String?
   goals              String?
-  linkedin_profile   String?
+  linkedin_profile   String
   twitter_profile    String?
   github_profile     String?
   portfolio_website  String?
@@ -168,10 +168,10 @@ model CompanyDetails {
   company_email       String
   company_phone       String
   company_location    String
-  company_website     String?
+  company_website     String
   company_description String
-  vision              String
-  mission             String
+  vision              String?
+  mission             String?
   team_size           String?
   company_type        String?
   industry            String

@@ -3,7 +3,7 @@ import Joi from 'joi';
 export const personalInfoSchema = Joi.object({
   profile_picture: Joi.string().uri().optional().allow(''),
   first_name: Joi.string().min(2).max(50).required(),
-  last_name: Joi.string().min(2).max(50).required(),
+  last_name: Joi.string().min(2).max(50).allow('').optional(),
   email: Joi.string().email().required(),
   phone: Joi.string().min(8).max(20).required(),
   location: Joi.string().min(2).max(100).required(),
@@ -14,7 +14,7 @@ export const personalInfoSchema = Joi.object({
 
 export const businessDetailsSchema = Joi.object({
   job_title: Joi.string().min(2).max(100).required(),
-  company: Joi.string().max(100).optional().allow(''),
+  company: Joi.string().max(100).required(),
   industry: Joi.string().min(2).max(100).required(),
   experience: Joi.string().max(50).optional().allow(''),
   business_type: Joi.string().max(50).optional().allow(''),
@@ -23,7 +23,7 @@ export const businessDetailsSchema = Joi.object({
   funding_stage: Joi.string().max(50).optional().allow(''),
   skills: Joi.string().max(1000).optional().allow(''),
   goals: Joi.string().max(1000).optional().allow(''),
-  linkedin_profile: Joi.string().uri().optional().allow(''),
+  linkedin_profile: Joi.string().uri().required(),
   twitter_profile: Joi.string().uri().optional().allow(''),
   github_profile: Joi.string().uri().optional().allow(''),
   portfolio_website: Joi.string().uri().optional().allow('')
@@ -36,18 +36,18 @@ export const companyDetailsSchema = Joi.object({
   company_email: Joi.string().email().required(),
   company_phone: Joi.string().min(8).max(20).required(),
   company_location: Joi.string().min(2).max(100).required(),
-  company_website: Joi.string().uri().optional().allow(''),
+  company_website: Joi.string().uri().required(),
   company_description: Joi.string().min(10).max(1000).required(),
-  vision: Joi.string().min(10).max(500).required(),
-  mission: Joi.string().min(10).max(500).required(),
+  vision: Joi.string().min(10).max(500).optional().allow(''),
+  mission: Joi.string().min(10).max(500).optional().allow(''),
   team_size: Joi.string().max(50).optional().allow(''),
   company_type: Joi.string().max(50).optional().allow(''),
   industry: Joi.string().min(2).max(100).required(),
   revenue_range: Joi.string().max(50).optional().allow(''),
-  legal_name: Joi.string().max(100).optional().allow(''),
-  tax_id: Joi.string().max(50).optional().allow(''),
-  registration_date: Joi.date().optional().allow(null),
-  business_license: Joi.string().max(100).optional().allow('')
+  legal_name: Joi.string().max(100).required(),
+  tax_id: Joi.string().max(50).required(),
+  registration_date: Joi.date().required(),
+  business_license: Joi.string().max(100).required()
 });
 
 export const offeringsSchema = Joi.object({
