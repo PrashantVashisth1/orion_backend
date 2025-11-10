@@ -36,7 +36,7 @@ export const companyDetailsSchema = Joi.object({
   company_email: Joi.string().email().required(),
   company_phone: Joi.string().min(8).max(20).required(),
   company_location: Joi.string().min(2).max(100).required(),
-  company_website: Joi.string().uri().required(),
+  company_website: Joi.string().required(),
   company_description: Joi.string().min(10).max(1000).required(),
   vision: Joi.string().min(10).max(500).optional().allow(''),
   mission: Joi.string().min(10).max(500).optional().allow(''),
