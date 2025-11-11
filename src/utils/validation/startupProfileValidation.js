@@ -6,7 +6,7 @@ export const personalInfoSchema = Joi.object({
   last_name: Joi.string().min(2).max(50).allow('').optional(),
   email: Joi.string().email().required(),
   phone: Joi.string().min(8).max(20).required(),
-  location: Joi.string().min(2).max(100).required(),
+  location: Joi.string().min(2).max(100).allow('').optional(),
   website: Joi.string().uri().optional().allow(''),
   birth_date: Joi.date().optional().allow(null),
   bio: Joi.string().max(1000).optional().allow('')
@@ -15,7 +15,7 @@ export const personalInfoSchema = Joi.object({
 export const businessDetailsSchema = Joi.object({
   job_title: Joi.string().min(2).max(100).required(),
   company: Joi.string().max(100).required(),
-  industry: Joi.string().min(2).max(100).required(),
+  industry: Joi.string().min(2).max(100).optional().allow(''),
   experience: Joi.string().max(50).optional().allow(''),
   business_type: Joi.string().max(50).optional().allow(''),
   team_size: Joi.string().max(50).optional().allow(''),
@@ -35,19 +35,19 @@ export const companyDetailsSchema = Joi.object({
   founded_year: Joi.number().integer().min(1900).max(new Date().getFullYear()).required(),
   company_email: Joi.string().email().required(),
   company_phone: Joi.string().min(8).max(20).required(),
-  company_location: Joi.string().min(2).max(100).required(),
-  company_website: Joi.string().required(),
-  company_description: Joi.string().min(10).max(1000).required(),
+  company_location: Joi.string().min(2).max(100).optional().allow(''),
+  company_website: Joi.string().optional().allow(''),
+  company_description: Joi.string().min(10).max(1000).optional().allow(''),
   vision: Joi.string().min(10).max(500).optional().allow(''),
   mission: Joi.string().min(10).max(500).optional().allow(''),
   team_size: Joi.string().max(50).optional().allow(''),
   company_type: Joi.string().max(50).optional().allow(''),
-  industry: Joi.string().min(2).max(100).required(),
+  industry: Joi.string().min(2).max(100).optional().allow(''),
   revenue_range: Joi.string().max(50).optional().allow(''),
-  legal_name: Joi.string().max(100).required(),
-  tax_id: Joi.string().max(50).required(),
-  registration_date: Joi.date().required(),
-  business_license: Joi.string().max(100).required()
+  legal_name: Joi.string().max(100).optional().allow(''),
+  tax_id: Joi.string().max(50).optional().allow(''),
+  registration_date: Joi.date().optional().allow(''),
+  business_license: Joi.string().max(100).optional().allow('')
 });
 
 export const offeringsSchema = Joi.object({

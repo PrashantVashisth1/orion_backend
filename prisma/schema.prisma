@@ -167,14 +167,14 @@ model CompanyDetails {
   founded_year        Int
   company_email       String
   company_phone       String
-  company_location    String
-  company_website     String
-  company_description String
+  company_location    String?
+  company_website     String?
+  company_description String?
   vision              String?
   mission             String?
   team_size           String?
   company_type        String?
-  industry            String
+  industry            String?
   revenue_range       String?
   legal_name          String?
   tax_id              String?

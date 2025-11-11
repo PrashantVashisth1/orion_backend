@@ -462,7 +462,7 @@ export async function updateCompanyDetails(req, res) {
 
     // The middleware already checked and created the profile
     const profileId = req.profile.id;
-
+    console.log("body: ->", req.body)
     const companyDetails = await upsertCompanyDetails(profileId, req.body);
     const completionPercentage = await updateCompletionPercentage(profileId);
 
