@@ -178,6 +178,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import winston from "winston";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Import Socket.IO initialization
 import { initializeSocket } from "./services/socketManager.js";

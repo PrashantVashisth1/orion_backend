@@ -50,6 +50,7 @@ model User {
   funding_submissions   FundingSubmission[]
   is_startup_verified   Boolean             @default(false)
   has_submitted_profile Boolean             @default(false)
+  pitch_review_submission   PitchReviewSubmission?
 
   @@map("users")
 }
@@ -398,4 +399,18 @@ model FundingSubmission {
 
   @@index([userId]) // Add an index for faster lookups by user
   @@map("funding_submissions") // Optional: Define the table name explicitly
+}
+
+
+model PitchReviewSubmission {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt // Add this
+
+  status  String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  pdfUrl  String? // Make optional
+  jsonUrl String? // Make optional
+
+  userId Int  @unique 
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
