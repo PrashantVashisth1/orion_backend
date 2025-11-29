@@ -41,6 +41,7 @@ model User {
   updated_at            DateTime            @updatedAt
   role                  UserRole            @default(STARTUP)
   startup_profile       StartupProfile?
+  student_profile       StudentProfile?
   posts                 Post[]
   likes                 Like[]
   comments              Comment[]
@@ -277,6 +278,124 @@ model InnovationFocus {
 
   @@map("innovation_focus")
 }
+
+// Main model linking to a User (assuming a User model exists)
+model StudentProfile {
+  id                      Int                 @id @default(autoincrement())
+  user_id                 Int                 @unique // Link to the main User model (User in the User model)
+  is_complete             Boolean             @default(false)
+  completion_percentage   Int                 @default(0)
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+
+  // Relationships to sub-sections
+  personal_info           StudentPersonalInfo?
+  education_records       EducationRecord[]    // One-to-many for multiple degrees/qualifications
+  work_experiences        WorkExperience[]     // One-to-many for multiple jobs/internships
+  skills_info             StudentSkills?
+  user                    User                @relation(fields: [user_id], references: [id], onDelete: Cascade) // Uncomment //this if User model is defined
+
+  @@map("student_profiles")
+}
+
+// --- Personal Info Section (image_dacf1c.png) ---
+model StudentPersonalInfo {
+  id                      Int                 @id @default(autoincrement())
+  student_profile_id      Int                 @unique
+  first_name              String
+  last_name               String?
+  profile_picture         String?       // Stores the S3 Public URL
+  profile_picture_key     String?       // Stores the S3 Key (for deletion/cleanup)
+  headline                String?             // Professional Title
+  phone                   String
+  gender                  String?
+  date_of_birth           DateTime?
+  location                String              // City, State, Country
+  // email (Assuming this comes from the main User model)
+
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+  student_profile         StudentProfile      @relation(fields: [student_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("student_personal_info")
+}
+
+// --- Education Section (image_dad1c6.png) ---
+// Using a one-to-many relationship (StudentProfile -> EducationRecord[]) 
+// to allow a student to list multiple educational entries.
+model EducationRecord {
+  id                      Int                 @id @default(autoincrement())
+  student_profile_id      Int
+  institution_name        String
+  degree_qualification    String
+  field_of_study          String
+  grade_cgpa              String?             // Grade/CGPA/CQPA
+  start_date              DateTime
+  end_date                DateTime?           // Nullable if "Present"
+
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+  student_profile         StudentProfile      @relation(fields: [student_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("student_education_records")
+}
+
+// --- Work Experience Section (image_dad1e4.png) ---
+// Using a one-to-many relationship (StudentProfile -> WorkExperience[]) 
+// to allow a student to list multiple experiences.
+model WorkExperience {
+  id                      Int                 @id @default(autoincrement())
+  student_profile_id      Int
+  company_name            String
+  job_title               String
+  start_date              DateTime
+  end_date                DateTime?           // Nullable if "Present"
+  location                String
+  description             String?             // Max 150 words
+
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+  student_profile         StudentProfile      @relation(fields: [student_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("student_work_experiences")
+}
+
+// --- Skills Section (image_dad203.png) ---
+model StudentSkills {
+  id                      Int                 @id @default(autoincrement())
+  student_profile_id      Int                 @unique
+  
+  // Storing selected skills as an array of strings (names of the skills)
+  selected_skills         String[]            @default([])
+  
+  // Optional: A separate model for more detailed certificate records
+  certificates            CertificateRecord[]
+
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+  student_profile         StudentProfile      @relation(fields: [student_profile_id], references: [id], onDelete: Cascade)
+
+  @@map("student_skills")
+}
+
+// --- Certificate Details (Linked to StudentSkills) ---
+model CertificateRecord {
+  id                      Int                 @id @default(autoincrement())
+  student_skills_id       Int
+  certificate_name        String
+  issuing_organization    String?
+  issue_date              DateTime?
+  credential_id           String?
+  credential_url          String?
+  
+  created_at              DateTime            @default(now())
+  updated_at              DateTime            @updatedAt
+  
+  skills_info             StudentSkills       @relation(fields: [student_skills_id], references: [id], onDelete: Cascade)
+
+  @@map("certificate_records")
+}
+
 
 model Session {
   id            Int            @id @default(autoincrement())

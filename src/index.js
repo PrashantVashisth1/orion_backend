@@ -187,6 +187,7 @@ import { initializeSocket } from "./services/socketManager.js";
 // Import route factories
 import authRoutes from "./routes/authRoutes.js";
 import startupProfileRoutes from "./routes/startupProfileRoutes.js";
+import studentProfileRoutes from "./routes/studentRoutes.js";
 import createPostRoutes from "./routes/postRoutes.js";
 import createCommentRoutes from "./routes/commentRoutes.js";
 import createLikeRoutes from "./routes/likeRoutes.js";
@@ -296,6 +297,9 @@ app.use("/api/auth", authRoutes);
 
 // Startup profile routes (protected, no io needed)
 app.use("/api/startup", startupProfileRoutes);
+
+// Student Profile routes 
+app.use("/api/student",studentProfileRoutes);
 
 // Trending Posts (no io needed)
 app.use("/api", trendingPostsRoutes);
