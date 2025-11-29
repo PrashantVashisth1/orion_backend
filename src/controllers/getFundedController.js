@@ -74,6 +74,66 @@ const pollForAnalysis = async (analysisId) => {
 
 // --- Add this function ---
 // CHECK 1: Get the user's current review status
+// export const getPitchReviewStatus = async (req, res) => {
+//   try {
+//     const userId = req.user.id; 
+
+//     const lastSubmission = await prisma.pitchReviewSubmission.findUnique({
+//       where: { userId: userId },
+//     });
+
+//     if (!lastSubmission) {
+//       // No submission ever, good to go
+//       return res.status(200).json({ canSubmit: true, lastSubmission: null });
+//     }
+
+//     // Check submission status
+//     if (lastSubmission.status === "PENDING") {
+//       return res.status(200).json({
+//         canSubmit: false,
+//         lastSubmission: null,
+//         message: 'Your previous submission is still processing. Please wait.',
+//       });
+//     }
+
+//     if (lastSubmission.status === "FAILED") {
+//       // If it failed, let them try again
+//       return res.status(200).json({ 
+//         canSubmit: true, 
+//         lastSubmission: null,
+//         message: 'Your last submission failed. Please try again.' 
+//       });
+//     }
+
+//     // If COMPLETED, check the 24-hour rule
+//     if (lastSubmission.status === "COMPLETED") {
+//       const now = new Date();
+//       const lastSubmissionDate = new Date(lastSubmission.updatedAt); // Use updatedAt
+//       const diffInHours = (now.getTime() - lastSubmissionDate.getTime()) / (1000 * 60 * 60);
+
+//       if (diffInHours < 24) {
+//         return res.status(200).json({
+//           canSubmit: false,
+//           lastSubmission: {
+//             pdfUrl: lastSubmission.pdfUrl,
+//             date: lastSubmission.updatedAt,
+//           },
+//           message: 'You can submit a new review 24 hours after your last one.',
+//         });
+//       }
+//     }
+
+//     // 24 hours have passed since last COMPLETED submission
+//     res.status(200).json({ canSubmit: true, lastSubmission: null });
+
+//   } catch (error) {
+//     console.error('Error checking pitch review status:', error);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+// 1. Get the user's current review status (WITH AUTO-CLEANUP)
 export const getPitchReviewStatus = async (req, res) => {
   try {
     const userId = req.user.id; 
@@ -87,7 +147,51 @@ export const getPitchReviewStatus = async (req, res) => {
       return res.status(200).json({ canSubmit: true, lastSubmission: null });
     }
 
-    // Check submission status
+    // --- AUTO-CLEANUP LOGIC START ---
+    // If the submission is COMPLETED but older than 24 hours, it is "trash".
+    // We can reset the record so the database stays clean.
+    if (lastSubmission.status === "COMPLETED") {
+      const now = new Date();
+      const lastSubmissionDate = new Date(lastSubmission.updatedAt);
+      const diffInHours = (now.getTime() - lastSubmissionDate.getTime()) / (1000 * 60 * 60);
+
+      if (diffInHours >= 24) {
+        // It's been more than 24 hours. Reset the record!
+        // We keep the record ID but clear the data.
+        
+        // OPTIONAL: Delete the old file from S3 here if you want to be extra thorough
+        // await deleteFromS3(lastSubmission.pdfUrl); 
+
+        await prisma.pitchReviewSubmission.update({
+          where: { id: lastSubmission.id },
+          data: {
+            status: "PENDING", // Reset status so they can submit again
+            pdfUrl: null,      // Clear the old URL
+            jsonUrl: null,     // Clear the old URL
+            // We don't change createdAt yet, that happens on new submission
+          }
+        });
+        
+        return res.status(200).json({ 
+          canSubmit: true, 
+          lastSubmission: null,
+          message: "You can submit a new review."
+        });
+      }
+      
+      // It is less than 24 hours, so return the download link
+      return res.status(200).json({
+        canSubmit: false,
+        lastSubmission: {
+          pdfUrl: lastSubmission.pdfUrl,
+          date: lastSubmission.updatedAt,
+        },
+        message: 'You can submit a new review 24 hours after your last one.',
+      });
+    }
+    // --- AUTO-CLEANUP LOGIC END ---
+
+    // Check pending/failed status (same as before)
     if (lastSubmission.status === "PENDING") {
       return res.status(200).json({
         canSubmit: false,
@@ -97,7 +201,6 @@ export const getPitchReviewStatus = async (req, res) => {
     }
 
     if (lastSubmission.status === "FAILED") {
-      // If it failed, let them try again
       return res.status(200).json({ 
         canSubmit: true, 
         lastSubmission: null,
@@ -105,25 +208,7 @@ export const getPitchReviewStatus = async (req, res) => {
       });
     }
 
-    // If COMPLETED, check the 24-hour rule
-    if (lastSubmission.status === "COMPLETED") {
-      const now = new Date();
-      const lastSubmissionDate = new Date(lastSubmission.updatedAt); // Use updatedAt
-      const diffInHours = (now.getTime() - lastSubmissionDate.getTime()) / (1000 * 60 * 60);
-
-      if (diffInHours < 24) {
-        return res.status(200).json({
-          canSubmit: false,
-          lastSubmission: {
-            pdfUrl: lastSubmission.pdfUrl,
-            date: lastSubmission.updatedAt,
-          },
-          message: 'You can submit a new review 24 hours after your last one.',
-        });
-      }
-    }
-
-    // 24 hours have passed since last COMPLETED submission
+    // Fallback
     res.status(200).json({ canSubmit: true, lastSubmission: null });
 
   } catch (error) {
