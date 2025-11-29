@@ -1,10 +1,17 @@
 import jwt from 'jsonwebtoken';
-const JWT_SECRET = process.env.JWT_SECRET;
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 /**
  * Helper to generate JWT tokens for a user
  */
 export function generateToken(userId) {
-  console.log(JWT_SECRET)
-  return jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error('JWT_SECRET is not configured. Set JWT_SECRET in your .env file');
+    throw new Error('JWT_SECRET not configured');
+  }
+
+  return jwt.sign({ sub: userId }, secret, { expiresIn: '7d' });
 }

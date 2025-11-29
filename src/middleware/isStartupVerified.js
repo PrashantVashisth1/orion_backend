@@ -3,6 +3,11 @@
  * This should be used *after* the authenticateToken middleware.
  */
 export const isStartupVerified = (req, res, next) => {
+
+  if(req.user && req.user.role !== 'STARTUP') {
+    return next();
+  }
+
   // Check if req.user exists and if is_startup_verified is true
   console.log("Startup verified status:", req.user.is_startup_verified);
   if (!req.user || !req.user.is_startup_verified) {
